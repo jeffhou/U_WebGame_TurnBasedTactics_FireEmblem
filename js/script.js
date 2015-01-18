@@ -3,6 +3,10 @@ var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 canvas.width = 512;
 canvas.height = 512;
+mapMaxX = 26;
+mapMaxY = 26;
+mapDisplacementX = 0;
+mapDisplacementY = 0;
 document.body.appendChild(canvas);
 
 // Hero image
@@ -29,6 +33,14 @@ terrainImage.onload = function () {
 };
 terrainImage.src = "images/grass_terrain.png";
 
+// Terrain image
+var wallReady = false;
+var wallImage = new Image();
+wallImage.onload = function () {
+    wallReady = true;
+};
+wallImage.src = "images/wall_terrain.png";
+
 // Game objects
 var hero = {
     //speed: 256 // movement in pixels per second
@@ -49,34 +61,59 @@ addEventListener("keyup", function (e) {
 
 // Reset the game when the player catches a girl
 var reset = function () {
-    hero.x = 0;
-    hero.y = 0;
+    hero.x = 1;
+    hero.y = 1;
 
+	mapDisplacementX = 0;
+	mapDisplacementY = 0;
+	
     // Throw the girl somewhere on the screen randomly
-    girl.x = 1 + Math.floor(Math.random() * 15);
-    girl.y = 1 + Math.floor(Math.random() * 15);
+    girl.x = 2 + Math.floor(Math.random() * (mapMaxX - 3));
+    girl.y = 2 + Math.floor(Math.random() * (mapMaxY - 3));
 };
 
 // Update game objects
 var update = function (modifier) {
     if (38 in keysDown) { // Player holding up
-        hero.y -= 1;
-		hero.y = (hero.y + 16) % 16;
+		if(mapGrid[hero.x][hero.y - 1] == 0){
+			hero.y -= 1;
+		}
+		if (mapDisplacementY > 0 && hero.y - mapDisplacementY == 2) {
+			mapDisplacementY--;
+		}
+		//hero.y = (hero.y + 16) % 16;
 		delete keysDown[38];
     }
     if (40 in keysDown) { // Player holding down
-        hero.y += 1;
-		hero.y = hero.y % 16;
+        if(mapGrid[hero.x][hero.y + 1] == 0){
+			hero.y += 1;
+		}
+		if (mapDisplacementY < mapMaxY - 16 && hero.y - mapDisplacementY == 13) {
+			mapDisplacementY++;
+		}
+		//hero.y += 1;
+		//hero.y = hero.y % 16;
 		delete keysDown[40];
     }
     if (37 in keysDown) { // Player holding left
-        hero.x -= 1;
-		hero.x = (hero.x + 16) % 16;
+        if(mapGrid[hero.x - 1][hero.y] == 0){
+			hero.x -= 1;
+		}
+		if (mapDisplacementX > 0 && hero.x - mapDisplacementX == 2) {
+			mapDisplacementX--;
+		}
+		//hero.x -= 1;
+		//hero.x = (hero.x + 16) % 16;
 		delete keysDown[37];
     }
     if (39 in keysDown) { // Player holding right
-        hero.x += 1;
-		hero.x = hero.x % 16;
+        if(mapGrid[hero.x + 1][hero.y] == 0){
+			hero.x += 1;
+		}
+		if (mapDisplacementX < mapMaxX - 16 && hero.x - mapDisplacementX == 13) {
+			mapDisplacementX++;
+		}
+		//hero.x = hero.x % 16;
 		delete keysDown[39];
     }
 
@@ -86,23 +123,38 @@ var update = function (modifier) {
         reset();
     }
 };
-
+var mapGrid = [];
+for (i = 0; i < mapMaxX; i++) {
+	mapGrid.push([]);
+	for (j = 0; j < mapMaxY; j++) {
+		if (i == 0 || j == 0 || i == mapMaxX - 1 || j == mapMaxY - 1) {
+			mapGrid[i].push(1);
+		} else {
+			mapGrid[i].push(0);
+		}
+	}
+}
+mapGrid[3][0] = 0;
 // Draw everything
 var render = function () {
     if (terrainReady) {
         for(i = 0; i < 16; i++){
             for(j = 0; j < 16; j++){
-                ctx.drawImage(terrainImage, i*32, j*32);
+                if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 0){
+					ctx.drawImage(terrainImage, i*32, j*32);
+				}else if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 1){
+					ctx.drawImage(wallImage, i*32, j*32);
+				}
             }
         }
     }
 
     if (heroReady) {
-        ctx.drawImage(heroImage, hero.x * 32, hero.y * 32);
+        ctx.drawImage(heroImage, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
     }
 
     if (girlReady) {
-        ctx.drawImage(girlImage, girl.x * 32, girl.y * 32);
+        ctx.drawImage(girlImage, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
     }
 
     // Score
