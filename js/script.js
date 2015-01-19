@@ -13,7 +13,10 @@ selectedObject = false;
 gameCanvasX = 10;
 gameCanvasY = 40;
 function drawImage (image, x, y) {
-	ctx.drawImage(image, x + gameCanvasX, y + gameCanvasY);
+	ctx.drawImage(image.image, x + gameCanvasX, y + gameCanvasY);
+}
+function drawObject (object, x, y) {
+	drawImage(object.image, x * TILE_WIDTH, y * TILE_HEIGHT);
 }
 function hashCoor (coor) {
 	return coor[0] * 1000 + coor[1];
@@ -29,24 +32,26 @@ function LoadedImage (imagePath) {
 	}
 	this.image.src = imagePath;
 }
-function MapObject (movementRange) {
-	this.movementRange = movementRange;
-}
 cursorImage = new LoadedImage("images/cursor.png");
-heroImage = new LoadedImage("images/character.png");
-girlImage = new LoadedImage("images/female_character_smiling.png");
+//girlImage = new LoadedImage("images/female_character_smiling.png");
 terrainImage = new LoadedImage("images/grass_terrain.png");
 wallImage = new LoadedImage("images/wall_terrain.png");
 blueImage = new LoadedImage("images/blue_highlight2.png");
 wrapperImage = new LoadedImage("images/vba-window.png");
 redImage = new LoadedImage("images/red_highlight1.png");
 
-// Game objects
-var hero = {
-    //speed: 256 // movement in pixels per second
+hero = new MapObject (1, 1, "images/character.png");
+girl = new MapObject (0, 0, "images/female_character_smiling.png");
+
+function MapObject (x, y, src) {
+	this.x = x;
+	this.y = y;
+	this.image = new LoadedImage(src);
+}
+MapObject.prototype.isReady = function() {
+    return this.image.image.ready;
 };
-var girl = {};
-var girlsCaught = 0;
+
 var cursor = {};
 cursor.x = 0;
 cursor.y = 0;
@@ -161,7 +166,6 @@ var update = function (modifier) {
 	}
     // Are they touching?
     if (hero.x == girl.x && girl.y == hero.y) {
-        ++girlsCaught;
         reset();
     }
 };
@@ -182,13 +186,13 @@ mapGrid[5][7] = 1;
 // Draw everything
 var render = function () {
 	
-    if (wallImage.image && wallImage.image) {
+    if (wallImage.image && terrainImage.image) {
         for(i = 0; i < canvas.x; i++){
             for(j = 0; j < canvas.y; j++){
                 if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 0){
-					drawImage(terrainImage.image, i*32, j*32);
+					drawImage(terrainImage, i*32, j*32);
 				}else if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 1){
-					drawImage(wallImage.image, i*32, j*32);
+					drawImage(wallImage, i*32, j*32);
 				}
             }
         }
@@ -198,7 +202,7 @@ var render = function () {
 		for(i = 0; i < canvas.x; i++){
             for(j = 0; j < canvas.y; j++){
                 if(availableMoves.indexOf(hashCoor([i + mapDisplacementX, j + mapDisplacementY])) != -1){
-					drawImage(blueImage.image, i*32, j*32);
+					drawImage(blueImage, i*32, j*32);
 				}
             }
         }
@@ -207,20 +211,20 @@ var render = function () {
 		for(i = 0; i < canvas.x; i++){
             for(j = 0; j < canvas.y; j++){
                 if(attackMoveRange.indexOf(hashCoor([i + mapDisplacementX, j + mapDisplacementY])) != -1){
-					drawImage(redImage.image, i*32, j*32);
+					drawImage(redImage, i*32, j*32);
 				}
             }
         }
 	}
-    if (heroImage.image.ready) {
-        drawImage(heroImage.image, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
+    if (hero.isReady()) {
+        drawObject(hero, hero.x - mapDisplacementX, hero.y - mapDisplacementY);
     }
 
-    if (girlImage.image.ready) {
-        drawImage(girlImage.image, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
+    if (girl.isReady()) {
+        drawObject(girl, girl.x - mapDisplacementX, girl.y - mapDisplacementY);
     }
 	if (cursorImage.image.ready) {
-		drawImage(cursorImage.image, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
+		drawImage(cursorImage, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
 	}
 	
 	if(wrapperImage.image.ready){
