@@ -1,8 +1,12 @@
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-canvas.width = 512;
-canvas.height = 512;
+TILE_WIDTH = 32;
+TILE_HEIGHT = 32;
+canvas.x = 15;
+canvas.y = 10;
+canvas.width = canvas.x * TILE_WIDTH;
+canvas.height = canvas.y * TILE_HEIGHT;
 mapMaxX = 26;
 mapMaxY = 26;
 mapDisplacementX = 0;
@@ -86,7 +90,7 @@ var update = function (modifier) {
         if(cursor.y != mapMaxY - 1){
 			cursor.y += 1;
 		}
-		if (mapDisplacementY < mapMaxY - 16 && cursor.y - mapDisplacementY == 13) {
+		if (mapDisplacementY < mapMaxY - canvas.y && cursor.y - mapDisplacementY == canvas.y - 3) {
 			mapDisplacementY++;
 		}
 		delete keysDown[40];
@@ -104,7 +108,7 @@ var update = function (modifier) {
         if(cursor.x != mapMaxX - 1){
 			cursor.x += 1;
 		}
-		if (mapDisplacementX < mapMaxX - 16 && cursor.x - mapDisplacementX == 13) {
+		if (mapDisplacementX < mapMaxX - canvas.x && cursor.x - mapDisplacementX == canvas.x - 3) {
 			mapDisplacementX++;
 		}
 		delete keysDown[39];
@@ -131,13 +135,18 @@ var update = function (modifier) {
 		}else{
 			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1){
 				selectedObject = false;
-				availableMoves = []
+				availableMoves = [];
 				hero.x = cursor.x;
 				hero.y = cursor.y;
 			}
 		}
 		
 		delete keysDown[90];
+	}
+	if (88 in keysDown) {
+		selectedObject = false;
+		availableMoves = [];
+		delete keysDown[88];		
 	}
     // Are they touching?
     if (hero.x == girl.x && girl.y == hero.y) {
@@ -162,8 +171,8 @@ mapGrid[5][7] = 1;
 // Draw everything
 var render = function () {
     if (wallImage.image && wallImage.image) {
-        for(i = 0; i < 16; i++){
-            for(j = 0; j < 16; j++){
+        for(i = 0; i < canvas.x; i++){
+            for(j = 0; j < canvas.y; j++){
                 if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 0){
 					ctx.drawImage(terrainImage.image, i*32, j*32);
 				}else if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 1){
@@ -174,8 +183,8 @@ var render = function () {
     }
 	
 	if (blueImage.image.ready) {
-		for(i = 0; i < 16; i++){
-            for(j = 0; j < 16; j++){
+		for(i = 0; i < canvas.x; i++){
+            for(j = 0; j < canvas.y; j++){
                 if(availableMoves.indexOf(hashCoor([i + mapDisplacementX, j + mapDisplacementY])) != -1){
 					ctx.drawImage(blueImage.image, i*32, j*32);
 				}
@@ -193,12 +202,6 @@ var render = function () {
 	if (cursorImage.image.ready) {
 		ctx.drawImage(cursorImage.image, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
 	}
-    // Score
-    ctx.fillStyle = "rgb(250, 250, 250)";
-    ctx.font = "24px Helvetica";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillText("Girls saved: " + girlsCaught, 32, 32);
 };
 
 // The main game loop
