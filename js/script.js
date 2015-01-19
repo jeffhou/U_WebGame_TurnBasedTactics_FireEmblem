@@ -8,7 +8,15 @@ mapMaxY = 26;
 mapDisplacementX = 0;
 mapDisplacementY = 0;
 document.body.appendChild(canvas);
-
+availableMoves = [];
+hashedDirections = [-1000, -1, 1, 1000];
+selectedObject = false;
+function hashCoor (coor) {
+	return coor[0] * 1000 + coor[1];
+}
+function unhashCoor (hashedCoor) {
+	return [parseInt(hashedCoor/1000), hashedCoor%1000];
+}
 function LoadedImage (imagePath) {
 	this.image = new Image();
 	this.image.ready = false;
@@ -17,14 +25,15 @@ function LoadedImage (imagePath) {
 	}
 	this.image.src = imagePath;
 }
-function MapObject () {
-	
+function MapObject (movementRange) {
+	this.movementRange = movementRange;
 }
 cursorImage = new LoadedImage("images/cursor.png");
 heroImage = new LoadedImage("images/character.png");
 girlImage = new LoadedImage("images/female_character_smiling.png");
 terrainImage = new LoadedImage("images/grass_terrain.png");
 wallImage = new LoadedImage("images/wall_terrain.png");
+blueImage = new LoadedImage("images/blue_highlight2.png");
 
 // Game objects
 var hero = {
@@ -98,7 +107,36 @@ var update = function (modifier) {
 		}
 		delete keysDown[39];
     }
-
+	if (90 in keysDown){ // pressed "z" which is actually "a" for our emulator
+		if (selectedObject == false) {
+			if(hero.x == cursor.x && hero.y == hero.y){
+				console.log("a");
+				selectedObject = true;
+				availableMoves = [];
+				availableMoves.push(hashCoor([hero.x, hero.y]));
+				
+				for(i = 0; i < 5; i++){
+					var old_length = availableMoves.length;
+					for(j = 0; j < old_length; j++){
+						for(k = 0; k < hashedDirections.length; k++){
+							if(availableMoves.indexOf(hashedDirections[k] + availableMoves[j]) == -1 && mapGrid[unhashCoor(hashedDirections[k] + availableMoves[j])[0]][unhashCoor(hashedDirections[k] + availableMoves[j])[1]] == 0){
+								availableMoves.push(hashedDirections[k] + availableMoves[j]);
+							}
+						}
+					}
+				}
+			}
+		}else{
+			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1){
+				selectedObject = false;
+				availableMoves = []
+				hero.x = cursor.x;
+				hero.y = cursor.y;
+			}
+		}
+		
+		delete keysDown[90];
+	}
     // Are they touching?
     if (hero.x == girl.x && girl.y == hero.y) {
         ++girlsCaught;
@@ -116,7 +154,9 @@ for (i = 0; i < mapMaxX; i++) {
 		}
 	}
 }
-mapGrid[3][0] = 0;
+mapGrid[5][5] = 1;
+mapGrid[5][6] = 1;
+mapGrid[5][7] = 1;
 // Draw everything
 var render = function () {
     if (wallImage.image && wallImage.image) {
@@ -130,7 +170,17 @@ var render = function () {
             }
         }
     }
-
+	
+	if (blueImage.image.ready) {
+		for(i = 0; i < 16; i++){
+            for(j = 0; j < 16; j++){
+                if(availableMoves.indexOf(hashCoor([i + mapDisplacementX, j + mapDisplacementY])) != -1){
+					ctx.drawImage(blueImage.image, i*32, j*32);
+				}
+            }
+        }
+	}
+	
     if (heroImage.image.ready) {
         ctx.drawImage(heroImage.image, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
     }
