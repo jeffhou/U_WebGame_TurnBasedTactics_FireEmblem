@@ -162,6 +162,7 @@ var update = function (modifier) {
 	if (88 in keysDown) {
 		selectedObject = false;
 		availableMoves = [];
+		attackMoveRange = [];
 		delete keysDown[88];		
 	}
     // Are they touching?
