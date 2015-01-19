@@ -57,6 +57,8 @@ addEventListener("keyup", function (e) {
 
 // Reset the game when the player catches a girl
 var reset = function () {
+	cursor.x = 1;
+	cursor.y = 1;
 	
     hero.x = 1;
     hero.y = 1;
