@@ -9,45 +9,22 @@ mapDisplacementX = 0;
 mapDisplacementY = 0;
 document.body.appendChild(canvas);
 
-// Hero image
-var cursorReady = false;
-var cursorImage = new Image();
-cursorImage.onload = function () {
-    cursorReady = true;
-};
-cursorImage.src = "images/cursor.png";
-
-// Hero image
-var heroReady = false;
-var heroImage = new Image();
-heroImage.onload = function () {
-    heroReady = true;
-};
-heroImage.src = "images/character.png";
-
-// girl image
-var girlReady = false;
-var girlImage = new Image();
-girlImage.onload = function () {
-    girlReady = true;
-};
-girlImage.src = "images/female_character_smiling.png";
-
-// Terrain image
-var terrainReady = false;
-var terrainImage = new Image();
-terrainImage.onload = function () {
-    terrainReady = true;
-};
-terrainImage.src = "images/grass_terrain.png";
-
-// Terrain image
-var wallReady = false;
-var wallImage = new Image();
-wallImage.onload = function () {
-    wallReady = true;
-};
-wallImage.src = "images/wall_terrain.png";
+function LoadedImage (imagePath) {
+	this.image = new Image();
+	this.image.ready = false;
+	this.image.onload = function () {
+		this.ready = true;
+	}
+	this.image.src = imagePath;
+}
+function MapObject () {
+	
+}
+cursorImage = new LoadedImage("images/cursor.png");
+heroImage = new LoadedImage("images/character.png");
+girlImage = new LoadedImage("images/female_character_smiling.png");
+terrainImage = new LoadedImage("images/grass_terrain.png");
+wallImage = new LoadedImage("images/wall_terrain.png");
 
 // Game objects
 var hero = {
@@ -92,7 +69,6 @@ var update = function (modifier) {
 		if (mapDisplacementY > 0 && cursor.y - mapDisplacementY == 2) {
 			mapDisplacementY--;
 		}
-		//cursor.y = (cursor.y + 16) % 16;
 		delete keysDown[38];
     }
     if (40 in keysDown) { // Player holding down
@@ -102,8 +78,6 @@ var update = function (modifier) {
 		if (mapDisplacementY < mapMaxY - 16 && cursor.y - mapDisplacementY == 13) {
 			mapDisplacementY++;
 		}
-		//cursor.y += 1;
-		//cursor.y = cursor.y % 16;
 		delete keysDown[40];
     }
     if (37 in keysDown) { // Player holding left
@@ -113,8 +87,6 @@ var update = function (modifier) {
 		if (mapDisplacementX > 0 && cursor.x - mapDisplacementX == 2) {
 			mapDisplacementX--;
 		}
-		//cursor.x -= 1;
-		//cursor.x = (cursor.x + 16) % 16;
 		delete keysDown[37];
     }
     if (39 in keysDown) { // Player holding right
@@ -124,7 +96,6 @@ var update = function (modifier) {
 		if (mapDisplacementX < mapMaxX - 16 && cursor.x - mapDisplacementX == 13) {
 			mapDisplacementX++;
 		}
-		//cursor.x = cursor.x % 16;
 		delete keysDown[39];
     }
 
@@ -148,27 +119,27 @@ for (i = 0; i < mapMaxX; i++) {
 mapGrid[3][0] = 0;
 // Draw everything
 var render = function () {
-    if (terrainReady && wallReady) {
+    if (wallImage.image && wallImage.image) {
         for(i = 0; i < 16; i++){
             for(j = 0; j < 16; j++){
                 if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 0){
-					ctx.drawImage(terrainImage, i*32, j*32);
+					ctx.drawImage(terrainImage.image, i*32, j*32);
 				}else if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 1){
-					ctx.drawImage(wallImage, i*32, j*32);
+					ctx.drawImage(wallImage.image, i*32, j*32);
 				}
             }
         }
     }
 
-    if (heroReady) {
-        ctx.drawImage(heroImage, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
+    if (heroImage.image.ready) {
+        ctx.drawImage(heroImage.image, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
     }
 
-    if (girlReady) {
-        ctx.drawImage(girlImage, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
+    if (girlImage.image.ready) {
+        ctx.drawImage(girlImage.image, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
     }
-	if (cursorReady) {
-		ctx.drawImage(cursorImage, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
+	if (cursorImage.image.ready) {
+		ctx.drawImage(cursorImage.image, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
 	}
     // Score
     ctx.fillStyle = "rgb(250, 250, 250)";
