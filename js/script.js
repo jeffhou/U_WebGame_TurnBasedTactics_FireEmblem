@@ -1,25 +1,20 @@
-// Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-TILE_WIDTH = 32;
-TILE_HEIGHT = 32;
-canvas.x = 15;
-canvas.y = 10;
-canvas.width = 500;
-canvas.height = 369;
-mapMaxX = 26;
-mapMaxY = 26;
-mapDisplacementX = 0;
-mapDisplacementY = 0;
+TILE_WIDTH = 32; TILE_HEIGHT = 32;
+canvas.x = 15; canvas.y = 10;
+canvas.width = 500; canvas.height = 369;
+mapMaxX = 18; mapMaxY = 13;
+mapDisplacementX = 0; mapDisplacementY = 0;
 document.body.appendChild(canvas);
 availableMoves = [];
+attackMoveRange = [];
 hashedDirections = [-1000, -1, 1, 1000];
 selectedObject = false;
 gameCanvasX = 10;
 gameCanvasY = 40;
 function drawImage (image, x, y) {
 	ctx.drawImage(image, x + gameCanvasX, y + gameCanvasY);
-}		
+}
 function hashCoor (coor) {
 	return coor[0] * 1000 + coor[1];
 }
@@ -44,6 +39,7 @@ terrainImage = new LoadedImage("images/grass_terrain.png");
 wallImage = new LoadedImage("images/wall_terrain.png");
 blueImage = new LoadedImage("images/blue_highlight2.png");
 wrapperImage = new LoadedImage("images/vba-window.png");
+redImage = new LoadedImage("images/red_highlight1.png");
 
 // Game objects
 var hero = {
@@ -126,7 +122,7 @@ var update = function (modifier) {
 				selectedObject = true;
 				availableMoves = [];
 				availableMoves.push(hashCoor([hero.x, hero.y]));
-				
+				attackMoveRange = [];
 				for(i = 0; i < 5; i++){
 					var old_length = availableMoves.length;
 					for(j = 0; j < old_length; j++){
@@ -137,11 +133,20 @@ var update = function (modifier) {
 						}
 					}
 				}
+				for (i = 0; i < availableMoves.length; i++) {
+					for (j = 0; j < hashedDirections.length; j++) {
+						if(availableMoves.indexOf(hashedDirections[j] + availableMoves[i]) == -1 && attackMoveRange.indexOf(hashedDirections[j] + availableMoves[i]) == -1){
+							attackMoveRange.push(hashedDirections[j] + availableMoves[i]);
+						}
+					}
+				}
+				
 			}
 		}else{
 			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1){
 				selectedObject = false;
 				availableMoves = [];
+				attackMoveRange = [];
 				hero.x = cursor.x;
 				hero.y = cursor.y;
 			}
@@ -198,7 +203,15 @@ var render = function () {
             }
         }
 	}
-	
+	if (redImage.image.ready) {
+		for(i = 0; i < canvas.x; i++){
+            for(j = 0; j < canvas.y; j++){
+                if(attackMoveRange.indexOf(hashCoor([i + mapDisplacementX, j + mapDisplacementY])) != -1){
+					drawImage(redImage.image, i*32, j*32);
+				}
+            }
+        }
+	}
     if (heroImage.image.ready) {
         drawImage(heroImage.image, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
     }
