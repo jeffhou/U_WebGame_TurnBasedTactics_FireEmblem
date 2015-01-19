@@ -5,8 +5,8 @@ TILE_WIDTH = 32;
 TILE_HEIGHT = 32;
 canvas.x = 15;
 canvas.y = 10;
-canvas.width = canvas.x * TILE_WIDTH;
-canvas.height = canvas.y * TILE_HEIGHT;
+canvas.width = 500;
+canvas.height = 369;
 mapMaxX = 26;
 mapMaxY = 26;
 mapDisplacementX = 0;
@@ -15,6 +15,11 @@ document.body.appendChild(canvas);
 availableMoves = [];
 hashedDirections = [-1000, -1, 1, 1000];
 selectedObject = false;
+gameCanvasX = 10;
+gameCanvasY = 40;
+function drawImage (image, x, y) {
+	ctx.drawImage(image, x + gameCanvasX, y + gameCanvasY);
+}		
 function hashCoor (coor) {
 	return coor[0] * 1000 + coor[1];
 }
@@ -38,6 +43,7 @@ girlImage = new LoadedImage("images/female_character_smiling.png");
 terrainImage = new LoadedImage("images/grass_terrain.png");
 wallImage = new LoadedImage("images/wall_terrain.png");
 blueImage = new LoadedImage("images/blue_highlight2.png");
+wrapperImage = new LoadedImage("images/vba-window.png");
 
 // Game objects
 var hero = {
@@ -170,13 +176,14 @@ mapGrid[5][6] = 1;
 mapGrid[5][7] = 1;
 // Draw everything
 var render = function () {
+	
     if (wallImage.image && wallImage.image) {
         for(i = 0; i < canvas.x; i++){
             for(j = 0; j < canvas.y; j++){
                 if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 0){
-					ctx.drawImage(terrainImage.image, i*32, j*32);
+					drawImage(terrainImage.image, i*32, j*32);
 				}else if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 1){
-					ctx.drawImage(wallImage.image, i*32, j*32);
+					drawImage(wallImage.image, i*32, j*32);
 				}
             }
         }
@@ -186,21 +193,25 @@ var render = function () {
 		for(i = 0; i < canvas.x; i++){
             for(j = 0; j < canvas.y; j++){
                 if(availableMoves.indexOf(hashCoor([i + mapDisplacementX, j + mapDisplacementY])) != -1){
-					ctx.drawImage(blueImage.image, i*32, j*32);
+					drawImage(blueImage.image, i*32, j*32);
 				}
             }
         }
 	}
 	
     if (heroImage.image.ready) {
-        ctx.drawImage(heroImage.image, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
+        drawImage(heroImage.image, (hero.x - mapDisplacementX) * 32, (hero.y - mapDisplacementY) * 32);
     }
 
     if (girlImage.image.ready) {
-        ctx.drawImage(girlImage.image, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
+        drawImage(girlImage.image, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
     }
 	if (cursorImage.image.ready) {
-		ctx.drawImage(cursorImage.image, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
+		drawImage(cursorImage.image, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
+	}
+	
+	if(wrapperImage.image.ready){
+		ctx.drawImage(wrapperImage.image, 0, 0);
 	}
 };
 
