@@ -32,7 +32,7 @@ function LoadedImage (imagePath) {
 	}
 	this.image.src = imagePath;
 }
-cursorImage = new LoadedImage("images/cursor.png");
+//cursorImage = new LoadedImage("images/cursor.png");
 //girlImage = new LoadedImage("images/female_character_smiling.png");
 terrainImage = new LoadedImage("images/grass_terrain.png");
 wallImage = new LoadedImage("images/wall_terrain.png");
@@ -42,7 +42,7 @@ redImage = new LoadedImage("images/red_highlight1.png");
 
 hero = new MapObject (1, 1, "images/character.png");
 girl = new MapObject (0, 0, "images/female_character_smiling.png");
-
+cursor = new MapObject (0, 0, "images/cursor.png");
 function MapObject (x, y, src) {
 	this.x = x;
 	this.y = y;
@@ -52,9 +52,6 @@ MapObject.prototype.isReady = function() {
     return this.image.image.ready;
 };
 
-var cursor = {};
-cursor.x = 0;
-cursor.y = 0;
 // Handle keyboard controls
 var keysDown = {};
 
@@ -224,8 +221,8 @@ var render = function () {
     if (girl.isReady()) {
         drawObject(girl, girl.x - mapDisplacementX, girl.y - mapDisplacementY);
     }
-	if (cursorImage.image.ready) {
-		drawImage(cursorImage, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
+	if (cursor.isReady()) {
+		drawObject(cursor, cursor.x - mapDisplacementX, cursor.y - mapDisplacementY)
 	}
 	
 	if(wrapperImage.image.ready){
