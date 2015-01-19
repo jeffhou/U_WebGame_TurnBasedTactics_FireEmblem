@@ -10,6 +10,14 @@ mapDisplacementY = 0;
 document.body.appendChild(canvas);
 
 // Hero image
+var cursorReady = false;
+var cursorImage = new Image();
+cursorImage.onload = function () {
+    cursorReady = true;
+};
+cursorImage.src = "images/cursor.png";
+
+// Hero image
 var heroReady = false;
 var heroImage = new Image();
 heroImage.onload = function () {
@@ -47,7 +55,9 @@ var hero = {
 };
 var girl = {};
 var girlsCaught = 0;
-
+var cursor = {};
+cursor.x = 0;
+cursor.y = 0;
 // Handle keyboard controls
 var keysDown = {};
 
@@ -61,6 +71,7 @@ addEventListener("keyup", function (e) {
 
 // Reset the game when the player catches a girl
 var reset = function () {
+	
     hero.x = 1;
     hero.y = 1;
 
@@ -75,45 +86,45 @@ var reset = function () {
 // Update game objects
 var update = function (modifier) {
     if (38 in keysDown) { // Player holding up
-		if(mapGrid[hero.x][hero.y - 1] == 0){
-			hero.y -= 1;
+		if(cursor.y != 0){
+			cursor.y -= 1;
 		}
-		if (mapDisplacementY > 0 && hero.y - mapDisplacementY == 2) {
+		if (mapDisplacementY > 0 && cursor.y - mapDisplacementY == 2) {
 			mapDisplacementY--;
 		}
-		//hero.y = (hero.y + 16) % 16;
+		//cursor.y = (cursor.y + 16) % 16;
 		delete keysDown[38];
     }
     if (40 in keysDown) { // Player holding down
-        if(mapGrid[hero.x][hero.y + 1] == 0){
-			hero.y += 1;
+        if(cursor.y != mapMaxY - 1){
+			cursor.y += 1;
 		}
-		if (mapDisplacementY < mapMaxY - 16 && hero.y - mapDisplacementY == 13) {
+		if (mapDisplacementY < mapMaxY - 16 && cursor.y - mapDisplacementY == 13) {
 			mapDisplacementY++;
 		}
-		//hero.y += 1;
-		//hero.y = hero.y % 16;
+		//cursor.y += 1;
+		//cursor.y = cursor.y % 16;
 		delete keysDown[40];
     }
     if (37 in keysDown) { // Player holding left
-        if(mapGrid[hero.x - 1][hero.y] == 0){
-			hero.x -= 1;
+        if(cursor.x != 0){
+			cursor.x -= 1;
 		}
-		if (mapDisplacementX > 0 && hero.x - mapDisplacementX == 2) {
+		if (mapDisplacementX > 0 && cursor.x - mapDisplacementX == 2) {
 			mapDisplacementX--;
 		}
-		//hero.x -= 1;
-		//hero.x = (hero.x + 16) % 16;
+		//cursor.x -= 1;
+		//cursor.x = (cursor.x + 16) % 16;
 		delete keysDown[37];
     }
     if (39 in keysDown) { // Player holding right
-        if(mapGrid[hero.x + 1][hero.y] == 0){
-			hero.x += 1;
+        if(cursor.x != mapMaxX - 1){
+			cursor.x += 1;
 		}
-		if (mapDisplacementX < mapMaxX - 16 && hero.x - mapDisplacementX == 13) {
+		if (mapDisplacementX < mapMaxX - 16 && cursor.x - mapDisplacementX == 13) {
 			mapDisplacementX++;
 		}
-		//hero.x = hero.x % 16;
+		//cursor.x = cursor.x % 16;
 		delete keysDown[39];
     }
 
@@ -137,7 +148,7 @@ for (i = 0; i < mapMaxX; i++) {
 mapGrid[3][0] = 0;
 // Draw everything
 var render = function () {
-    if (terrainReady) {
+    if (terrainReady && wallReady) {
         for(i = 0; i < 16; i++){
             for(j = 0; j < 16; j++){
                 if(mapGrid[i + mapDisplacementX][j + mapDisplacementY] == 0){
@@ -156,7 +167,9 @@ var render = function () {
     if (girlReady) {
         ctx.drawImage(girlImage, (girl.x - mapDisplacementX) * 32, (girl.y - mapDisplacementY) * 32);
     }
-
+	if (cursorReady) {
+		ctx.drawImage(cursorImage, (cursor.x - mapDisplacementX) * 32, (cursor.y - mapDisplacementY) * 32)
+	}
     // Score
     ctx.fillStyle = "rgb(250, 250, 250)";
     ctx.font = "24px Helvetica";
