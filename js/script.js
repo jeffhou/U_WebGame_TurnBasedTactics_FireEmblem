@@ -111,7 +111,7 @@ var update = function (modifier) {
     }
 	if (90 in keysDown){ // pressed "z" which is actually "a" for our emulator
 		if (selectedObject == false) {
-			if(hero.x == cursor.x && hero.y == hero.y){
+			if(hero.x == cursor.x && hero.y == cursor.y){
 				console.log("a");
 				selectedObject = true;
 				availableMoves = [];
