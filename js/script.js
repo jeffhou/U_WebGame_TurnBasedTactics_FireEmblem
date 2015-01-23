@@ -12,6 +12,7 @@ hashedDirections = [-1000, -1, 1, 1000];
 selectedObject = false;
 gameCanvasX = 10;
 gameCanvasY = 40;
+
 function drawImage (image, x, y) {
 	ctx.drawImage(image.image, x + gameCanvasX, y + gameCanvasY);
 }
@@ -42,11 +43,20 @@ redImage = new LoadedImage("images/red_highlight1.png");
 
 hero = new MapObject (1, 1, "images/character.png");
 girl = new MapObject (0, 0, "images/female_character_smiling.png");
+unitsOnMap = [];
+unitsOnMap.push(hero);
+unitsOnMap.push(girl);
 cursor = new MapObject (0, 0, "images/cursor.png");
-function MapObject (x, y, src) {
+function MapObject (x, y, src, unit) {
 	this.x = x;
 	this.y = y;
 	this.image = new LoadedImage(src);
+	this.unit = unit;
+}
+function Unit (playerID) {
+	this.playerID = playerID;
+	this.hp = 5;
+	this.attack = 2;
 }
 MapObject.prototype.isReady = function() {
     return this.image.image.ready;
@@ -181,6 +191,10 @@ for (i = 0; i < mapMaxX; i++) {
 mapGrid[5][5] = 1;
 mapGrid[5][6] = 1;
 mapGrid[5][7] = 1;
+mapGrid[6][5] = 1;
+mapGrid[7][5] = 1;
+mapGrid[7][4] = 1;
+mapGrid[7][3] = 1;
 // Draw everything
 var render = function () {
 	
