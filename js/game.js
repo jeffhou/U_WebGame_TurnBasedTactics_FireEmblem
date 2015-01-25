@@ -1,3 +1,4 @@
+// TODO: bug where guy can't stay in place as a move
 var keysDown = {};
 addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
@@ -171,7 +172,8 @@ function processInputs () {
 		delete keysDown[39];
     }
 	if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
-		if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
+		console.log(game.turnMode);
+		if (game.turnMode == 0) {//if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
 			if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID == game.currentPlayer && grid.grid[cursor.x][cursor.y].unit.active) { // cursor is on an active unit belonging to the current player
 				grid.selectedObject = grid.grid[cursor.x][cursor.y].unit;
 				availableMoves = [];
@@ -207,15 +209,38 @@ function processInputs () {
 			if (game.turnMode == 1) {
 				if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1 && grid.grid[cursor.x][cursor.y].unit == null) {
 					grid.placeUnitAt(grid.selectedObject, cursor.x, cursor.y);
-					grid.selectedObject = null;
 					availableMoves = [];
 					attackMoveRange = [];
+					for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
+						
+							attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor([cursor.x, cursor.y]));
+					}
 					game.turnMode = 2;
+					//console.log
 					// unit just moved
 				} else {
 					console.log("invalid click");
+					
 				}
 			} else if (game.turnMode == 2) {
+				if (attackMoveRange.indexOf(hashCoor([cursor.x, cursor.y])) != -1) { //clicked in range
+					if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID != game.currentPlayer) { //attacking the enemy unit
+						grid.grid[cursor.x][cursor.y].unit.currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
+						if (grid.grid[cursor.x][cursor.y].unit.currentHP <= 0) {  // if enemy died
+							units.splice(units.indexOf(grid.grid[cursor.x][cursor.y].unit), 1);
+							grid.grid[cursor.x][cursor.y].unit = null;
+							grid.selectedObject = null;
+						}
+					} else { //didn't attack anyone and just waited (by clicking on ally or ground)
+						grid.selectedObject = null;
+					}
+					game.turnMode = 0;
+					availableMoves = [];
+					attackMoveRange = [];
+				} else {
+					console.log("invalid click");
+				}
+				
 				// unit needs to perform action or wait
 				// check to see if there are any other units of the current player who is active, if none exist, end turn
 			}
