@@ -1,6 +1,6 @@
 // TODO: bug where guy can't stay in place as a move
 var keysDown = {};
-addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);
+addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
 
 var canvas = document.createElement("canvas");
@@ -17,7 +17,7 @@ function Game (numPlayers) {
 }
 var game = new Game(2);
 
-var CONSTANTS = new function () {
+var CONSTANTS = new function () { //Lors notes different ways to make class; this is a singleton (sftwr design pattern) there can only be one instance of this class. 
 	this.hashedDirections = [-1000, -1, 1, 1000];
 	this.tileWidth = 32;
 	this.mapWidth = 15;
@@ -38,9 +38,9 @@ var cursor = new function () {
 
 function ImageObject (imagePath) {
 	this.image = new Image();
-	this.image.ready = false;
+	this.image.ready = false; 		
 	this.image.onload = function () {
-		this.ready = true;
+		this.ready = true;		//??LOR what is going on 
 	}
 	this.image.src = imagePath;
 } ImageObject.prototype.draw = function (x, y) {
@@ -151,7 +151,7 @@ function processInputs () {
 		if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
 			grid.yDisplace++;
 		}
-		delete keysDown[40];
+		delete keysDown[40]; //?? LOR IDK WHAT ARE THESE DELETE
     }
     if (37 in keysDown) { // Player holding left
         if(cursor.x != 0) {
@@ -192,7 +192,7 @@ function processInputs () {
 									}
 								}
 
-							}
+							} //?? LOR 8)
 						}
 					}
 				}
