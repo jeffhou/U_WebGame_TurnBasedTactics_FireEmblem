@@ -136,9 +136,9 @@ var grid = new Grid();
 wrapperImage = new ImageObject("images/vba-window.png");
 
 function processInputs () {
-	if (38 in keysDown) { // Player holding up       //Karen what is keysDown
-		if(cursor.y != 0) {
-			cursor.y -= 1;
+	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
+		if(cursor.y != 0) {   //if the cursor isn't in the top row
+			cursor.y -= 1;  //when you're going up, you're always decreasing the y value
 		}
 		if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
 			grid.yDisplace--;
