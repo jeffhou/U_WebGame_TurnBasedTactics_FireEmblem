@@ -207,7 +207,7 @@ function processInputs () {
 				game.turnMode = 1;
 			}
 		} else if (game.turnMode == 1) { //moving
-			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1 && grid.grid[cursor.x][cursor.y].unit == null) {
+			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1 && (grid.grid[cursor.x][cursor.y].unit == null || grid.grid[cursor.x][cursor.y].unit == grid.selectedObject)) {
 				grid.placeUnitAt(grid.selectedObject, cursor.x, cursor.y);
 				availableMoves = [];
 				attackMoveRange = [];
