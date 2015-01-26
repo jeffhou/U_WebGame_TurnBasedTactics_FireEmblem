@@ -11,7 +11,7 @@ attackMoveRange = [];
 hashedDirections = [-1000, -1, 1, 1000];
 selectedObject = false;
 gameCanvasX = 10;
-gameCanvasY = 40;
+gameCanvasY = 40; //What is 40?
 
 function drawImage (image, x, y) {
 	ctx.drawImage(image.image, x + gameCanvasX, y + gameCanvasY);
