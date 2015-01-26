@@ -54,7 +54,7 @@ function ImageObject (imagePath) {
 	this.drawWithDisplacement(x, y, 10, 40);
 }; ImageObject.prototype.drawOnGrid = function (tileX, tileY) {
 	this.drawOnScreen((tileX - grid.xDisplace) * CONSTANTS.tileWidth, (tileY - grid.yDisplace) * CONSTANTS.tileWidth);
-};
+};   //KAR is this making the background?
 
 function Unit (name, maxHP, attack, move, imagePath, playerID) {
 	this.name = name;
@@ -71,7 +71,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 
 function Terrain (traversable) {
 	this.traversable = traversable;
-	this.unit = null;
+	this.unit = null;            //KAR what is dis
 } Terrain.prototype.setUnit = function (unit) {
 	this.unit = unit;
 };
@@ -89,7 +89,7 @@ units.push(new Unit("monster", 10, 3, 4, "images/monster.png", 1));
 
 function activateUnits () {
 	for (i = 0; i < units.length; i++) {
-		units[i].active = true;
+		units[i].active = true;           
 	}
 }
 function existsActiveUnits () {
@@ -135,7 +135,7 @@ var grid = new Grid();
 wrapperImage = new ImageObject("images/vba-window.png");
 
 function processInputs () {
-	if (38 in keysDown) { // Player holding up
+	if (38 in keysDown) { // Player holding up       //Karen what is keysDown
 		if(cursor.y != 0) {
 			cursor.y -= 1;
 		}
