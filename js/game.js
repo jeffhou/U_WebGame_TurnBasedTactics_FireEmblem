@@ -29,6 +29,7 @@ function hashCoor (coor) {
 function unhashCoor (hashedCoor) {
 	return [parseInt(hashedCoor/1000), hashedCoor%1000];
 }
+//SUNG TIL HERE
 
 var cursor = new function () {
 	this.imageObject = new ImageObject ("images/cursor.png");
