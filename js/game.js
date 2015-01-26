@@ -221,7 +221,7 @@ function processInputs () {
 				console.log("invalid click");	
 			}
 		} else if (game.turnMode == 2) { //attacking
-			if (attackMoveRange.indexOf(hashCoor([cursor.x, cursor.y])) != -1) { //clicked in range
+			if (attackMoveRange.indexOf(hashCoor([cursor.x, cursor.y])) != -1 || hashCoor([cursor.x, cursor.y]) == hashCoor([grid.selectedObject.x, grid.selectedObject.y])) { //clicked in range
 				if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID != game.currentPlayer) { //attacking the enemy unit
 					grid.grid[cursor.x][cursor.y].unit.currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
 					if (grid.grid[cursor.x][cursor.y].unit.currentHP <= 0) {  // if enemy died
