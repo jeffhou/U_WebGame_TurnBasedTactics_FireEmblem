@@ -228,11 +228,30 @@ function processInputs () {
 					if (grid.grid[cursor.x][cursor.y].unit.currentHP <= 0) {  // if enemy died
 						units.splice(units.indexOf(grid.grid[cursor.x][cursor.y].unit), 1);
 						grid.grid[cursor.x][cursor.y].unit = null;
-						grid.selectedObject = null;
 					}
 				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
-					grid.selectedObject = null;
+					//do nothing
 				}
+				grid.selectedObject.active = false;
+				// TODO: should make this into a function
+				var allInactive = true;
+				for (i = 0; i < units.length; i++) {
+					if (units[i].playerID == game.currentPlayer && units[i].active) {
+						allInactive = false;
+						break;
+					}
+				}
+				if (allInactive) {
+					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+					for (i = 0; i < units.length; i++) {
+						if (units[i].playerID == game.currentPlayer) {
+							units[i].active = true;
+						}
+					}
+				}
+				
+				// 
+				grid.selectedObject = null;
 				game.turnMode = 0;
 				availableMoves = [];
 				attackMoveRange = [];
