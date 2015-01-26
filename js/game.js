@@ -51,13 +51,20 @@ function ImageObject (imagePath) {
 	if (this.image.ready) {
 		context.drawImage(this.image, x, y);
 	}
+}; ImageObject.prototype.drawScaled = function (x, y, width, height) {
+	//TODO: Should not draw if not on canvas or not on VBA screen (if relevant)
+	if (this.image.ready) {
+		context.drawImage(this.image, x, y, width, height);
+	}
 }; ImageObject.prototype.drawWithDisplacement = function (x, y, displaceX, displaceY) {
 	this.draw(x + displaceX, y + displaceY);
 }; ImageObject.prototype.drawOnScreen = function (x, y) {
 	this.drawWithDisplacement(x, y, 10, 40);
 }; ImageObject.prototype.drawOnGrid = function (tileX, tileY) {
-	this.drawOnScreen((tileX - grid.xDisplace) * CONSTANTS.tileWidth, (tileY - grid.yDisplace) * CONSTANTS.tileWidth);
-};   //KAR is this making the background?
+	this.drawOnScreen((tileX - grid.xDisplace) * CONSTANTS.tileWidth, (tileY - grid.yDisplace) * CONSTANTS.tileWidth); //KAR is this making the background?
+}; ImageObject.prototype.drawOnScreenScaled = function (x, y, width, height) {
+	this.drawScaled(x + 10, y + 40, width, height);
+};
 
 function Unit (name, maxHP, attack, move, imagePath, playerID) {
 	this.name = name;
@@ -324,7 +331,7 @@ function drawAll () {
 			context.fillRect(10 + 86, 40 + 72 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
 			context.fillStyle = "#f0e9bb";
 			context.fillRect(10 + 86, 40 + 73 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-
+			cursor_tile.unit.image.drawOnScreenScaled(20, 21 + 224, 56, 56);
 		} else {
 			characterPane.drawOnScreen(0, 0);
 			context.font = "bold 17px Verdana";
@@ -343,6 +350,7 @@ function drawAll () {
 			context.fillRect(10 + 86, 40 + 72, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
 			context.fillStyle = "#f0e9bb";
 			context.fillRect(10 + 86, 40 + 73, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			cursor_tile.unit.image.drawOnScreenScaled(20, 21, 56, 56);
 		}
 	}
 };
