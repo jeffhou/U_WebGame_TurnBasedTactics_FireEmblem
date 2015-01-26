@@ -5,6 +5,8 @@ addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
 
 var canvas = document.createElement("canvas");
 var context = canvas.getContext("2d");
+context.font = "150px Georgia";
+
 canvas.width = 500; canvas.height = 369;
 document.body.appendChild(canvas);
 attackMoveRange = [];
@@ -83,10 +85,12 @@ terrainMapObjects[true] = new ImageObject("images/grass_terrain.png");
 blueHighlight = new ImageObject("images/blue_highlight2.png");
 redHighlight = new ImageObject("images/red_highlight1.png");
 
+characterPane = new ImageObject("images/character_pane.png");
+
 var units = [];
-units.push(new Unit("boy", 10, 3, 4, "images/character.png", 0));
-units.push(new Unit("girl", 10, 3, 4, "images/female_character_smiling.png", 0));
-units.push(new Unit("monster", 10, 3, 4, "images/monster.png", 1));
+units.push(new Unit("Seth", 10, 3, 4, "images/character.png", 0));
+units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
+units.push(new Unit("Cutthroat", 10, 3, 4, "images/monster.png", 1));
 
 function activateUnits () {
 	for (i = 0; i < units.length; i++) {
@@ -300,6 +304,47 @@ function drawAll () {
 		}
 	}
 	cursor.imageObject.drawOnGrid(cursor.x, cursor.y);
+	
+	if ((cursor_tile = grid.grid[cursor.x][cursor.y]).unit != null) {
+		if (cursor.x < 8 && cursor.y < 5) {
+			characterPane.drawOnScreen(0, 224);
+			context.font = "bold 17px Verdana";
+			context.fillStyle = "#000000";
+			currentHPString = "" + cursor_tile.unit.currentHP;
+			context.fillText(currentHPString, 148 - 10 * currentHPString.length, 224 + 103);
+			context.fillText("" + cursor_tile.unit.maxHP, 173, 224 + 103);
+			context.font = "bold 18px Courier";
+			context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 224 + 81);
+			
+			context.fillStyle = "#f8f7f5";
+			context.fillRect(10 + 86, 40 + 70 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			context.fillStyle = "#f6f4e9";
+			context.fillRect(10 + 86, 40 + 71 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			context.fillStyle = "#f2ecc7";
+			context.fillRect(10 + 86, 40 + 72 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			context.fillStyle = "#f0e9bb";
+			context.fillRect(10 + 86, 40 + 73 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+
+		} else {
+			characterPane.drawOnScreen(0, 0);
+			context.font = "bold 17px Verdana";
+			context.fillStyle = "#000000";
+			currentHPString = "" + cursor_tile.unit.currentHP;
+			context.fillText(currentHPString, 148 - 10 * currentHPString.length, 103);
+			context.fillText("" + cursor_tile.unit.maxHP, 173, 103);
+			context.font = "bold 18px Courier";
+			context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 81);
+			
+			context.fillStyle = "#f8f7f5";
+			context.fillRect(10 + 86, 40 + 70, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			context.fillStyle = "#f6f4e9";
+			context.fillRect(10 + 86, 40 + 71, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			context.fillStyle = "#f2ecc7";
+			context.fillRect(10 + 86, 40 + 72, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+			context.fillStyle = "#f0e9bb";
+			context.fillRect(10 + 86, 40 + 73, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+		}
+	}
 };
 
 var main = function () {
