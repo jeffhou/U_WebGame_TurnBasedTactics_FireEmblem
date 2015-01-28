@@ -49,15 +49,15 @@ var cursor = new function () {
 }
 
 function ImageObject (imagePath) {
-	this.image = new Image();
-	this.image.ready = false; 		
-	this.image.onload = function () {
+	this.image = new Image(); // creates a new image BER
+	this.image.ready = false; 		// doesn't load the image? BERN
+	this.image.onload = function () { // as soon as the page has been loaded, do this function BERN
 		this.ready = true;		//??LOR what is going on 
 	}
-	this.image.src = imagePath;
-} ImageObject.prototype.draw = function (x, y) {
+	this.image.src = imagePath; // sets the imagepath to url? BER
+} ImageObject.prototype.draw = function (x, y) { //draws starting at the x and y values? BERN
 	//TODO: Should not draw if not on canvas or not on VBA screen (if relevant)
-	if (this.image.ready) {
+	if (this.image.ready) { // if the image is ready draw it centered at the specified x and y coordinates? BER
 		context.drawImage(this.image, x, y);
 	}
 }; ImageObject.prototype.drawScaled = function (x, y, width, height) {
@@ -66,16 +66,17 @@ function ImageObject (imagePath) {
 		context.drawImage(this.image, x, y, width, height);
 	}
 }; ImageObject.prototype.drawWithDisplacement = function (x, y, displaceX, displaceY) {
-	this.draw(x + displaceX, y + displaceY);
+	this.draw(x + displaceX, y + displaceY); // moves the drawing? so the character can move around the screen? BERN
 }; ImageObject.prototype.drawOnScreen = function (x, y) {
 	this.drawWithDisplacement(x, y, 10, 40);
-}; ImageObject.prototype.drawOnGrid = function (tileX, tileY) {
+}; ImageObject.prototype.drawOnGrid = function (tileX, tileY) { // draws the background?
 	this.drawOnScreen((tileX - grid.xDisplace) * CONSTANTS.tileWidth, (tileY - grid.yDisplace) * CONSTANTS.tileWidth); //KAR is this making the background?
 }; ImageObject.prototype.drawOnScreenScaled = function (x, y, width, height) {
 	this.drawScaled(x + 10, y + 40, width, height);
 };
 
-function Unit (name, maxHP, attack, move, imagePath, playerID) {
+function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the variables for the units and sets their original location to the origin BER
+	this.name = name;
 	this.name = name;
 	this.maxHP = maxHP;
 	this.currentHP = maxHP;
@@ -89,7 +90,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 }
 
 function Terrain (traversable) {
-	this.traversable = traversable;
+	this.traversable = traversable; // sets the terrain's traversible field to the value inputted, traversable or not traversable so you can toggle whether or not a character can go somewhere?
 	this.unit = null;            //KAR what is dis
 } Terrain.prototype.setUnit = function (unit) {
 	this.unit = unit;
@@ -348,7 +349,7 @@ function drawAll () {
 	}
 
 	for(i = 0; i < grid.width; i++){
-		for(j = 0; j < grid.height; j++){
+		for(j = 0; j < grid.height; j++){ // highlights the avilable moves in blue after looping through every spot on the grid
 			if(availableMoves.indexOf(hashCoor([i + grid.xDisplace, j + grid.yDisplace])) != -1) {
 				blueHighlight.drawOnGrid(i, j);
 			}
@@ -356,7 +357,7 @@ function drawAll () {
 	}
 
 	for(i = 0; i < grid.width; i++){
-		for(j = 0; j < grid.height; j++){
+		for(j = 0; j < grid.height; j++){ // highlights the moves that lead to an attack? after looping through the grid
 			if(attackMoveRange.indexOf(hashCoor([i + grid.xDisplace, j + grid.yDisplace])) != -1) {
 				redHighlight.drawOnGrid(i, j);
 			}
@@ -364,13 +365,13 @@ function drawAll () {
 	}
 
 	for (i = 0; i < CONSTANTS.mapWidth; i++) {
-		for (j = 0; j < CONSTANTS.mapHeight; j++) {
+		for (j = 0; j < CONSTANTS.mapHeight; j++) { // allows you to move units?
 			if (grid.grid[i + grid.xDisplace][j + grid.yDisplace].unit) {
 				grid.grid[i + grid.xDisplace][j + grid.yDisplace].unit.image.drawOnGrid(i + grid.xDisplace, j + grid.yDisplace);
 			}
 		}
 	}
-	cursor.imageObject.drawOnGrid(cursor.x, cursor.y);
+	cursor.imageObject.drawOnGrid(cursor.x, cursor.y); // draws the cursor
 	
 	if (game.phase == "action menu" /*8 row*/) {
 		if (cursor.x - grid.xDisplace < 8) {
@@ -381,7 +382,7 @@ function drawAll () {
 			menu_bot.drawOnScreen(360, 1 * 38 + 58);
 			menu_cursor.drawOnScreen(340, 25 + 38 * (action_menu_selection));
 			context.fillText("Attack", 391, 85);
-			context.fillText("Wait", 391, 85 + 38);
+			context.fillText("Wait", 391, 85 + 38); // if the other character is withing 8 squares of your character give the options to attack or wait?
 		} else {
 			context.font = "bold 18px Verdana";
 			context.fillStyle = "#ffffff";
@@ -392,7 +393,7 @@ function drawAll () {
 			context.fillText("Attack", 51, 85);
 			context.fillText("Wait", 51, 85 + 38);
 		}
-	} else if (game.phase == "neutral") {	
+	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
 		if ((cursor_tile = grid.grid[cursor.x][cursor.y]).unit != null) {
 			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
 				characterPane.drawOnScreen(0, 224);
@@ -442,4 +443,4 @@ var main = function () {
     drawAll();
     requestAnimationFrame(main);
 };
-main();
+main(); // why 2 mains? bern, PS: I forgot where the first portion of mine ended but I did comment up there
