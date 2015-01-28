@@ -15,6 +15,7 @@ function Game (numPlayers) {
 	this.numPlayers = numPlayers;
 	this.currentPlayer = 0;
 	this.turnMode = 0;
+	this.phase = "neutral";
 	// turnMode: 0 = equilibrium, 1 = unit selected (moving), 2 = unit moved (action)
 }
 var game = new Game(2);
@@ -32,6 +33,10 @@ function unhashCoor (hashedCoor) {
 	return [parseInt(hashedCoor/1000), hashedCoor%1000];
 }
 //SUNG TIL HERE
+menu_top = new ImageObject ("images/menu-top.png");
+menu_mid = new ImageObject ("images/menu-middle.png");
+menu_bot = new ImageObject ("images/menu-bottom.png");
+menu_cursor = new ImageObject ("images/menu-cursor.png");
 
 var cursor = new function () {
 	this.imageObject = new ImageObject ("images/cursor.png");
@@ -148,44 +153,65 @@ wrapperImage = new ImageObject("images/vba-window.png");
 
 function processInputs () {
 	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
-		if(cursor.y != 0) {   //if the cursor isn't in the top row
-			cursor.y -= 1;  //when you're going up, you're always decreasing the y value
-		}
-		if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
-			grid.yDisplace--;
+		if (game.phase == "action menu") {
+			action_menu_selection--;
+			if (action_menu_selection == -1) {
+				action_menu_selection = 0;
+			}
+		} else {
+			if(cursor.y != 0) {   //if the cursor isn't in the top row
+				cursor.y -= 1;  //when you're going up, you're always decreasing the y value
+			}
+			if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
+				grid.yDisplace--;
+			}
 		}
 		delete keysDown[38];
+		
     }
     if (40 in keysDown) { // Player holding down
-        if(cursor.y != grid.height - 1) {
-			cursor.y += 1;
-		}
-		if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
-			grid.yDisplace++;
+		if (game.phase == "action menu") {
+			action_menu_selection++;
+			if (action_menu_selection == 2) {
+				action_menu_selection = 1;
+			}
+		} else {
+			if(cursor.y != grid.height - 1) {
+				cursor.y += 1;
+			}
+			if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
+				grid.yDisplace++;
+			}	
 		}
 		delete keysDown[40]; //?? LOR IDK WHAT ARE THESE DELETE
     }
     if (37 in keysDown) { // Player holding left
-        if(cursor.x != 0) {
-			cursor.x -= 1;
+        if (game.phase != "action menu") {
+			if(cursor.x != 0) {
+				cursor.x -= 1;
+			}
+			if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
+				grid.xDisplace--;
+			}
 		}
-		if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
-			grid.xDisplace--;
-		}
+		
 		delete keysDown[37];
     }
     if (39 in keysDown) { // Player holding right
-        if(cursor.x != grid.width - 1) {
-			cursor.x += 1;
+		if (game.phase != "action menu") {
+			if(cursor.x != grid.width - 1) {
+				cursor.x += 1;
+			}
+			if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
+				grid.xDisplace++;
+			}
 		}
-		if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
-			grid.xDisplace++;
-		}
+        
 		delete keysDown[39];
     }
 	if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
 		//console.log(game.turnMode);
-		if (game.turnMode == 0) {//if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
+		if (game.phase == "neutral") {//if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
 			if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID == game.currentPlayer && grid.grid[cursor.x][cursor.y].unit.active) { // cursor is on an active unit belonging to the current player
 				grid.selectedObject = grid.grid[cursor.x][cursor.y].unit;
 				availableMoves = [];
@@ -215,9 +241,9 @@ function processInputs () {
 						}
 					}
 				}
-				game.turnMode = 1;
+				game.phase = "unit selected";
 			}
-		} else if (game.turnMode == 1) { //moving
+		} else if (game.phase == "unit selected") { //moving
 			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1 && (grid.grid[cursor.x][cursor.y].unit == null || grid.grid[cursor.x][cursor.y].unit == grid.selectedObject)) {
 				grid.placeUnitAt(grid.selectedObject, cursor.x, cursor.y);
 				availableMoves = [];
@@ -226,13 +252,43 @@ function processInputs () {
 					
 						attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor([cursor.x, cursor.y]));
 				}
-				game.turnMode = 2;
+				game.phase = "action menu";
+				action_menu_selection = 0;
 				//console.log
 				// unit just moved
 			} else {
 				console.log("invalid click");	
 			}
-		} else if (game.turnMode == 2) { //attacking
+		} else if (game.phase == "action menu") { //attacking
+			//action_menu_selection = 0;
+			if (action_menu_selection == 0) {
+				game.phase = "unit attacking";
+			} else {
+				grid.selectedObject.active = false;
+				// TODO: should make this into a function
+				var allInactive = true;
+				for (i = 0; i < units.length; i++) {
+					if (units[i].playerID == game.currentPlayer && units[i].active) {
+						allInactive = false;
+						break;
+					}
+				}
+				if (allInactive) {
+					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+					for (i = 0; i < units.length; i++) {
+						if (units[i].playerID == game.currentPlayer) {
+							units[i].active = true;
+						}
+					}
+				}
+				
+				// 
+				grid.selectedObject = null;
+				game.phase = "neutral";
+				availableMoves = [];
+				attackMoveRange = [];
+			}
+		} else if (game.phase == "unit attacking") { //attacking
 			if (attackMoveRange.indexOf(hashCoor([cursor.x, cursor.y])) != -1 || hashCoor([cursor.x, cursor.y]) == hashCoor([grid.selectedObject.x, grid.selectedObject.y])) { //clicked in range
 				if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID != game.currentPlayer) { //attacking the enemy unit
 					grid.grid[cursor.x][cursor.y].unit.currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
@@ -263,7 +319,7 @@ function processInputs () {
 				
 				// 
 				grid.selectedObject = null;
-				game.turnMode = 0;
+				game.phase = "neutral";
 				availableMoves = [];
 				attackMoveRange = [];
 			} else {
@@ -312,45 +368,67 @@ function drawAll () {
 	}
 	cursor.imageObject.drawOnGrid(cursor.x, cursor.y);
 	
-	if ((cursor_tile = grid.grid[cursor.x][cursor.y]).unit != null) {
-		if (cursor.x < 8 && cursor.y < 5) {
-			characterPane.drawOnScreen(0, 224);
-			context.font = "bold 17px Verdana";
-			context.fillStyle = "#000000";
-			currentHPString = "" + cursor_tile.unit.currentHP;
-			context.fillText(currentHPString, 148 - 10 * currentHPString.length, 224 + 103);
-			context.fillText("" + cursor_tile.unit.maxHP, 173, 224 + 103);
-			context.font = "bold 18px Courier";
-			context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 224 + 81);
-			
-			context.fillStyle = "#f8f7f5";
-			context.fillRect(10 + 86, 40 + 70 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			context.fillStyle = "#f6f4e9";
-			context.fillRect(10 + 86, 40 + 71 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			context.fillStyle = "#f2ecc7";
-			context.fillRect(10 + 86, 40 + 72 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			context.fillStyle = "#f0e9bb";
-			context.fillRect(10 + 86, 40 + 73 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			cursor_tile.unit.image.drawOnScreenScaled(20, 21 + 224, 56, 56);
+	if (game.phase == "action menu" /*8 row*/) {
+		if (cursor.x - grid.xDisplace < 8) {
+			context.font = "bold 18px Verdana";
+			context.fillStyle = "#ffffff";
+			menu_top.drawOnScreen(360, 0);
+			menu_mid.drawOnScreen(360, 58);
+			menu_bot.drawOnScreen(360, 1 * 38 + 58);
+			menu_cursor.drawOnScreen(340, 25 + 38 * (action_menu_selection));
+			context.fillText("Attack", 391, 85);
+			context.fillText("Wait", 391, 85 + 38);
 		} else {
-			characterPane.drawOnScreen(0, 0);
-			context.font = "bold 17px Verdana";
-			context.fillStyle = "#000000";
-			currentHPString = "" + cursor_tile.unit.currentHP;
-			context.fillText(currentHPString, 148 - 10 * currentHPString.length, 103);
-			context.fillText("" + cursor_tile.unit.maxHP, 173, 103);
-			context.font = "bold 18px Courier";
-			context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 81);
-			
-			context.fillStyle = "#f8f7f5";
-			context.fillRect(10 + 86, 40 + 70, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			context.fillStyle = "#f6f4e9";
-			context.fillRect(10 + 86, 40 + 71, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			context.fillStyle = "#f2ecc7";
-			context.fillRect(10 + 86, 40 + 72, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			context.fillStyle = "#f0e9bb";
-			context.fillRect(10 + 86, 40 + 73, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-			cursor_tile.unit.image.drawOnScreenScaled(20, 21, 56, 56);
+			context.font = "bold 18px Verdana";
+			context.fillStyle = "#ffffff";
+			menu_top.drawOnScreen(20, 0);
+			menu_mid.drawOnScreen(20, 58);
+			menu_bot.drawOnScreen(20, 1 * 38 + 58);
+			menu_cursor.drawOnScreen(0, 25 + 38 * (1 - 1));
+			context.fillText("Attack", 51, 85);
+			context.fillText("Wait", 51, 85 + 38);
+		}
+	} else if (game.phase == "neutral") {	
+		if ((cursor_tile = grid.grid[cursor.x][cursor.y]).unit != null) {
+			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
+				characterPane.drawOnScreen(0, 224);
+				context.font = "bold 17px Verdana";
+				context.fillStyle = "#000000";
+				currentHPString = "" + cursor_tile.unit.currentHP;
+				context.fillText(currentHPString, 148 - 10 * currentHPString.length, 224 + 103);
+				context.fillText("" + cursor_tile.unit.maxHP, 173, 224 + 103);
+				context.font = "bold 18px Courier";
+				context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 224 + 81);
+				
+				context.fillStyle = "#f8f7f5";
+				context.fillRect(10 + 86, 40 + 70 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillStyle = "#f6f4e9";
+				context.fillRect(10 + 86, 40 + 71 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillStyle = "#f2ecc7";
+				context.fillRect(10 + 86, 40 + 72 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillStyle = "#f0e9bb";
+				context.fillRect(10 + 86, 40 + 73 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				cursor_tile.unit.image.drawOnScreenScaled(20, 21 + 224, 56, 56);
+			} else {
+				characterPane.drawOnScreen(0, 0);
+				context.font = "bold 17px Verdana";
+				context.fillStyle = "#000000";
+				currentHPString = "" + cursor_tile.unit.currentHP;
+				context.fillText(currentHPString, 148 - 10 * currentHPString.length, 103);
+				context.fillText("" + cursor_tile.unit.maxHP, 173, 103);
+				context.font = "bold 18px Courier";
+				context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 81);
+				
+				context.fillStyle = "#f8f7f5";
+				context.fillRect(10 + 86, 40 + 70, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillStyle = "#f6f4e9";
+				context.fillRect(10 + 86, 40 + 71, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillStyle = "#f2ecc7";
+				context.fillRect(10 + 86, 40 + 72, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillStyle = "#f0e9bb";
+				context.fillRect(10 + 86, 40 + 73, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				cursor_tile.unit.image.drawOnScreenScaled(20, 21, 56, 56);
+			}
 		}
 	}
 };
