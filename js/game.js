@@ -1,38 +1,42 @@
 // TODO: bug where guy can't stay in place as a move
 var keysDown = {};
-addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	
+addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	//eventlisteners! so that the game knows to watch out for keypresses! woah!
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
 
-var canvas = document.createElement("canvas");
-var context = canvas.getContext("2d");
-context.font = "150px Georgia";
+var canvas = document.createElement("canvas"); //this creates the canvas! all the stuff we see exists on the canvas! woah!
+var context = canvas.getContext("2d");	//canvas specifications
+context.font = "150px Georgia";		//canvas specifications
 
-canvas.width = 500; canvas.height = 369;
-document.body.appendChild(canvas);
+canvas.width = 500; canvas.height = 369;	//canvas specifications (size)
+document.body.appendChild(canvas);			//place canvas in the main html code? woah?
 attackMoveRange = [];
 availableMoves = [];
-function Game (numPlayers) {
+function Game (numPlayers) {		//sets initial game parameters? woah?
 	this.numPlayers = numPlayers;
 	this.currentPlayer = 0;
 	this.turnMode = 0;
-	this.phase = "neutral";
+	this.phase = "neutral";			//im assuming this is defined somewhere
 	// turnMode: 0 = equilibrium, 1 = unit selected (moving), 2 = unit moved (action)
 }
-var game = new Game(2);
+var game = new Game(2);				//initialize game object! woah!
 
+
+//dunno how this syntax works:
 var CONSTANTS = new function () { //Lors notes different ways to make class; this is a singleton (sftwr design pattern) there can only be one instance of this class. 
 	this.hashedDirections = [-1000, -1, 1, 1000];
-	this.tileWidth = 32;
+	this.tileWidth = 32;			//game map specifications
 	this.mapWidth = 15;
 	this.mapHeight = 10;
 }
+
+//im guessing these functions parse coordinates in the tile system so that we can refer to tiles easily
 function hashCoor (coor) {
 	return coor[0] * 1000 + coor[1];
 }
 function unhashCoor (hashedCoor) {
 	return [parseInt(hashedCoor/1000), hashedCoor%1000];
 }
-//SUNG TIL HERE
+//SUNG TIL HERE WOAH
 menu_top = new ImageObject ("images/menu-top.png");
 menu_mid = new ImageObject ("images/menu-middle.png");
 menu_bot = new ImageObject ("images/menu-bottom.png");
