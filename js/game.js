@@ -1,11 +1,9 @@
-// TODO: bug where guy can't stay in place as a move
 var keysDown = {};
 addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	//eventlisteners! so that the game knows to watch out for keypresses! woah!
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
 
 var canvas = document.createElement("canvas"); //this creates the canvas! all the stuff we see exists on the canvas! woah!
 var context = canvas.getContext("2d");	//canvas specifications
-context.font = "150px Georgia";		//canvas specifications
 
 canvas.width = 500; canvas.height = 369;	//canvas specifications (size)
 document.body.appendChild(canvas);			//place canvas in the main html code? woah?
@@ -16,7 +14,6 @@ function Game (numPlayers) {		//sets initial game parameters? woah?
 	this.currentPlayer = 0;
 	this.turnMode = 0;
 	this.phase = "neutral";			//im assuming this is defined somewhere
-	// turnMode: 0 = equilibrium, 1 = unit selected (moving), 2 = unit moved (action)
 }
 var game = new Game(2);				//initialize game object! woah!
 
@@ -27,26 +24,56 @@ var CONSTANTS = new function () { //Lors notes different ways to make class; thi
 	this.tileWidth = 32;			//game map specifications
 	this.mapWidth = 15;
 	this.mapHeight = 10;
-}
+};
+
+var IMAGES = new function () {
+	this.menu_top = new ImageObject ("images/menu-top.png");
+	this.menu_mid = new ImageObject ("images/menu-middle.png");
+	this.menu_bot = new ImageObject ("images/menu-bottom.png");
+	this.menu_cursor = new ImageObject ("images/menu-cursor.png");
+	this.terrainMapObjects = {};
+	this.terrainMapObjects[false] = new ImageObject("images/wall_terrain.png");
+	this.terrainMapObjects[true] = new ImageObject("images/grass_terrain.png");
+	this.blueHighlight = new ImageObject("images/blue_highlight2.png");
+	this.redHighlight = new ImageObject("images/red_highlight1.png");
+	this.characterPane = new ImageObject("images/character_pane.png");
+	this.wrapperImage = new ImageObject("images/vba-window.png");
+};
 
 //im guessing these functions parse coordinates in the tile system so that we can refer to tiles easily
 function hashCoor (coor) {
-	return coor[0] * 1000 + coor[1];
+	return coor.x * 1000 + coor.y;
 }
 function unhashCoor (hashedCoor) {
 	return [parseInt(hashedCoor/1000), hashedCoor%1000];
 }
-//SUNG TIL HERE WOAH
-menu_top = new ImageObject ("images/menu-top.png");
-menu_mid = new ImageObject ("images/menu-middle.png");
-menu_bot = new ImageObject ("images/menu-bottom.png");
-menu_cursor = new ImageObject ("images/menu-cursor.png");
 
-var cursor = new function () {
+//SUNG TIL HERE WOAH
+
+
+function Cursor() {
 	this.imageObject = new ImageObject ("images/cursor.png");
 	this.x = 0;
 	this.y = 0;
+	
+} Cursor.prototype.coor = function () {
+	return new Coor(this.x, this.y);
+}; Cursor.prototype.draw = function () {
+	this.imageObject.drawOnGrid(cursor.coor().screenify());
 }
+cursor = new Cursor();
+
+function Coor (x, y) {
+	this.x = x;
+	this.y = y;
+} Coor.prototype.equals = function (coor) {
+	if (coor instanceof Coor) return this.x == coor.x && this.y == coor.y;
+	return false;
+}; Coor.prototype.unscreenify = function () {
+	return new Coor(this.x + grid.xDisplace, this.y + grid.yDisplace);
+}; Coor.prototype.screenify = function () {
+	return new Coor(this.x - grid.xDisplace, this.y - grid.yDisplace);
+};
 
 function ImageObject (imagePath) {
 	this.image = new Image(); // creates a new image BER
@@ -69,8 +96,8 @@ function ImageObject (imagePath) {
 	this.draw(x + displaceX, y + displaceY); // moves the drawing? so the character can move around the screen? BERN
 }; ImageObject.prototype.drawOnScreen = function (x, y) {
 	this.drawWithDisplacement(x, y, 10, 40);
-}; ImageObject.prototype.drawOnGrid = function (tileX, tileY) { // draws the background?
-	this.drawOnScreen((tileX - grid.xDisplace) * CONSTANTS.tileWidth, (tileY - grid.yDisplace) * CONSTANTS.tileWidth); //KAR is this making the background?
+}; ImageObject.prototype.drawOnGrid = function (coor) { // draws the background?
+	this.drawOnScreen((coor.x - grid.xDisplace) * CONSTANTS.tileWidth, (coor.y - grid.yDisplace) * CONSTANTS.tileWidth); //KAR is this making the background?
 }; ImageObject.prototype.drawOnScreenScaled = function (x, y, width, height) {
 	this.drawScaled(x + 10, y + 40, width, height);
 };
@@ -87,7 +114,9 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	this.playerID = playerID;
 	this.x = 0;
 	this.y = 0;
-}
+} Unit.prototype.coor = function () {
+	return new Coor(this.x, this.y);
+};
 
 function Terrain (traversable) {
 	this.traversable = traversable; // sets the terrain's traversible field to the value inputted, traversable or not traversable so you can toggle whether or not a character can go somewhere?
@@ -95,46 +124,21 @@ function Terrain (traversable) {
 } Terrain.prototype.setUnit = function (unit) {
 	this.unit = unit;
 };
-terrainMapObjects = {};
-terrainMapObjects[false] = new ImageObject("images/wall_terrain.png");
-terrainMapObjects[true] = new ImageObject("images/grass_terrain.png");
-
-blueHighlight = new ImageObject("images/blue_highlight2.png");
-redHighlight = new ImageObject("images/red_highlight1.png");
-
-characterPane = new ImageObject("images/character_pane.png");
 
 var units = [];
 units.push(new Unit("Seth", 10, 3, 4, "images/character.png", 0));
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
 units.push(new Unit("Cutthroat", 10, 3, 4, "images/monster.png", 1));
 
-function activateUnits () {
-	for (i = 0; i < units.length; i++) {
-		units[i].active = true;           
-	}
-}
-function existsActiveUnits () {
-	for (i = 0; i < units.length; i++) {
-		if(units[i].active) return true;
-	}
-	return false;
-}
-
 function Grid () {
 	this.grid = [];
-	this.width = 15;
-	this.height = 10;
-	this.xDisplace = 0;
-	this.yDisplace = 0;
+	this.width = 15;  this.height = 10;
+	this.xDisplace = 0;  this.yDisplace = 0;
 	this.selectedObject = null;
 	for (i = 0; i < this.width; i++) {
 		this.grid.push([]);
-		//console.log(this.grid);
 		for (j = 0; j < this.height; j++) {
 			if (i == 0 || j == 0 || i == this.width - 1 || j == this.height - 1) {
-				//console.log(this.grid[i]);
-				//console.log(i);
 				this.grid[i].push(new Terrain(false));
 			} else {
 				this.grid[i].push(new Terrain(true));
@@ -151,10 +155,24 @@ function Grid () {
 	unit.x = x;
 	unit.y = y;
 	this.grid[x][y].unit = unit;
+}; Grid.prototype.unitAt = function (coor) {
+	return this.grid[coor.x][coor.y].unit;
+}; Grid.prototype.tileAt = function (coor) {
+	return this.grid[coor.x][coor.y];
+}; Grid.prototype.tileOnScreen = function (coor) {
+	return this.grid[coor.x + this.xDisplace][coor.y + this.yDisplace];
+}; Grid.prototype.unitOnScreen = function (coor) {
+	return this.grid[coor.x + this.xDisplace][coor.y + this.yDisplace].unit;
+}; Grid.prototype.iterateScreen = function (runnable) {
+	for (i = 0; i < CONSTANTS.mapWidth; i++) {
+		for (j = 0; j < CONSTANTS.mapHeight; j++) {
+			runnable(new Coor(i, j));
+		}
+	}
 };
 var grid = new Grid();
 
-wrapperImage = new ImageObject("images/vba-window.png");
+
 
 function processInputs () {
 	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
@@ -215,14 +233,15 @@ function processInputs () {
 		delete keysDown[39];
     }
 	if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
-		//console.log(game.turnMode);
 		if (game.phase == "neutral") {//if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
-			if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID == game.currentPlayer && grid.grid[cursor.x][cursor.y].unit.active) { // cursor is on an active unit belonging to the current player
-				grid.selectedObject = grid.grid[cursor.x][cursor.y].unit;
+			if (grid.unitAt(cursor.coor()) != null
+					&& grid.unitAt(cursor.coor()).playerID == game.currentPlayer
+					&& grid.unitAt(cursor.coor()).active) { // cursor is on an active unit belonging to the current player
+				grid.selectedObject = grid.unitAt(cursor.coor());
 				availableMoves = [];
-				availableMoves.push(hashCoor([cursor.x, cursor.y]));
+				availableMoves.push(hashCoor(cursor.coor()));
 				attackMoveRange = [];
-				for(i = 0; i < grid.grid[cursor.x][cursor.y].unit.move; i++){
+				for(i = 0; i < grid.unitAt(cursor.coor()).move; i++){
 					var old_length = availableMoves.length;
 					for(j = 0; j < old_length; j++){
 						for(k = 0; k < CONSTANTS.hashedDirections.length; k++){
@@ -249,13 +268,13 @@ function processInputs () {
 				game.phase = "unit selected";
 			}
 		} else if (game.phase == "unit selected") { //moving
-			if (availableMoves.indexOf(hashCoor([cursor.x, cursor.y])) != -1 && (grid.grid[cursor.x][cursor.y].unit == null || grid.grid[cursor.x][cursor.y].unit == grid.selectedObject)) {
+			if (availableMoves.indexOf(hashCoor(cursor.coor())) != -1 && (grid.unitAt(cursor.coor()) == null || grid.unitAt(cursor.coor()) == grid.selectedObject)) {
 				grid.placeUnitAt(grid.selectedObject, cursor.x, cursor.y);
 				availableMoves = [];
 				attackMoveRange = [];
 				for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
 					
-						attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor([cursor.x, cursor.y]));
+						attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
 				}
 				game.phase = "action menu";
 				action_menu_selection = 0;
@@ -265,7 +284,6 @@ function processInputs () {
 				console.log("invalid click");	
 			}
 		} else if (game.phase == "action menu") { //attacking
-			//action_menu_selection = 0;
 			if (action_menu_selection == 0) {
 				game.phase = "unit attacking";
 			} else {
@@ -294,11 +312,11 @@ function processInputs () {
 				attackMoveRange = [];
 			}
 		} else if (game.phase == "unit attacking") { //attacking
-			if (attackMoveRange.indexOf(hashCoor([cursor.x, cursor.y])) != -1 || hashCoor([cursor.x, cursor.y]) == hashCoor([grid.selectedObject.x, grid.selectedObject.y])) { //clicked in range
-				if (grid.grid[cursor.x][cursor.y].unit != null && grid.grid[cursor.x][cursor.y].unit.playerID != game.currentPlayer) { //attacking the enemy unit
-					grid.grid[cursor.x][cursor.y].unit.currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
-					if (grid.grid[cursor.x][cursor.y].unit.currentHP <= 0) {  // if enemy died
-						units.splice(units.indexOf(grid.grid[cursor.x][cursor.y].unit), 1);
+			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
+				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
+					grid.unitAt(cursor.coor()).currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
+					if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
+						units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
 						grid.grid[cursor.x][cursor.y].unit = null;
 					}
 				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
@@ -339,100 +357,92 @@ function processInputs () {
 }
 
 function drawAll () {
-	wrapperImage.draw(0, 0);
+	IMAGES.wrapperImage.draw(0, 0);
 	
-	// print units
-	for (i = 0; i < CONSTANTS.mapWidth; i++) {
-		for (j = 0; j < CONSTANTS.mapHeight; j++) {
-			terrainMapObjects[grid.grid[i + grid.xDisplace][j + grid.yDisplace].traversable].drawOnGrid(i + grid.xDisplace, j + grid.yDisplace);
+	grid.iterateScreen(function (coor) {  
+		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).traversable].drawOnGrid(coor);
+	});
+	
+	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the visible grid
+		if(availableMoves.indexOf(hashCoor(coor.unscreenify())) != -1) {
+			IMAGES.blueHighlight.drawOnGrid(coor);
 		}
-	}
+	});
+	
+	grid.iterateScreen(function (coor) {  // highlights the attack range in red after looping through every spot on the visible grid
+		if(attackMoveRange.indexOf(hashCoor(coor.unscreenify())) != -1) {
+			IMAGES.redHighlight.drawOnGrid(coor);
+		}
+	});
 
-	for(i = 0; i < grid.width; i++){
-		for(j = 0; j < grid.height; j++){ // highlights the avilable moves in blue after looping through every spot on the grid
-			if(availableMoves.indexOf(hashCoor([i + grid.xDisplace, j + grid.yDisplace])) != -1) {
-				blueHighlight.drawOnGrid(i, j);
-			}
+	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the grid
+		if (grid.unitOnScreen(coor)) {
+			grid.unitOnScreen(coor).image.drawOnGrid(coor);
 		}
-	}
-
-	for(i = 0; i < grid.width; i++){
-		for(j = 0; j < grid.height; j++){ // highlights the moves that lead to an attack? after looping through the grid
-			if(attackMoveRange.indexOf(hashCoor([i + grid.xDisplace, j + grid.yDisplace])) != -1) {
-				redHighlight.drawOnGrid(i, j);
-			}
-		}
-	}
-
-	for (i = 0; i < CONSTANTS.mapWidth; i++) {
-		for (j = 0; j < CONSTANTS.mapHeight; j++) { // allows you to move units?
-			if (grid.grid[i + grid.xDisplace][j + grid.yDisplace].unit) {
-				grid.grid[i + grid.xDisplace][j + grid.yDisplace].unit.image.drawOnGrid(i + grid.xDisplace, j + grid.yDisplace);
-			}
-		}
-	}
-	cursor.imageObject.drawOnGrid(cursor.x, cursor.y); // draws the cursor
+	});
+	
+	cursor.draw(); // draws the cursor
 	
 	if (game.phase == "action menu" /*8 row*/) {
 		if (cursor.x - grid.xDisplace < 8) {
 			context.font = "bold 18px Verdana";
 			context.fillStyle = "#ffffff";
-			menu_top.drawOnScreen(360, 0);
-			menu_mid.drawOnScreen(360, 58);
-			menu_bot.drawOnScreen(360, 1 * 38 + 58);
-			menu_cursor.drawOnScreen(340, 25 + 38 * (action_menu_selection));
+			IMAGES.menu_top.drawOnScreen(360, 0);
+			IMAGES.menu_mid.drawOnScreen(360, 58);
+			IMAGES.menu_bot.drawOnScreen(360, 1 * 38 + 58);
+			IMAGES.menu_cursor.drawOnScreen(340, 25 + 38 * (action_menu_selection));
 			context.fillText("Attack", 391, 85);
 			context.fillText("Wait", 391, 85 + 38); // if the other character is withing 8 squares of your character give the options to attack or wait?
 		} else {
 			context.font = "bold 18px Verdana";
 			context.fillStyle = "#ffffff";
-			menu_top.drawOnScreen(20, 0);
-			menu_mid.drawOnScreen(20, 58);
-			menu_bot.drawOnScreen(20, 1 * 38 + 58);
-			menu_cursor.drawOnScreen(0, 25 + 38 * (1 - 1));
+			IMAGES.menu_top.drawOnScreen(20, 0);
+			IMAGES.menu_mid.drawOnScreen(20, 58);
+			IMAGES.menu_bot.drawOnScreen(20, 1 * 38 + 58);
+			IMAGES.menu_cursor.drawOnScreen(0, 25 + 38 * (1 - 1));
 			context.fillText("Attack", 51, 85);
 			context.fillText("Wait", 51, 85 + 38);
 		}
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
-		if ((cursor_tile = grid.grid[cursor.x][cursor.y]).unit != null) {
+		if (grid.unitAt(cursor.coor()) != null) {
 			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
-				characterPane.drawOnScreen(0, 224);
+				IMAGES.characterPane.drawOnScreen(0, 224);
 				context.font = "bold 17px Verdana";
 				context.fillStyle = "#000000";
-				currentHPString = "" + cursor_tile.unit.currentHP;
+				currentHPString = "" + grid.unitAt(cursor.coor()).currentHP;
 				context.fillText(currentHPString, 148 - 10 * currentHPString.length, 224 + 103);
-				context.fillText("" + cursor_tile.unit.maxHP, 173, 224 + 103);
+				context.fillText("" + grid.unitAt(cursor.coor()).maxHP, 173, 224 + 103);
 				context.font = "bold 18px Courier";
-				context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 224 + 81);
+				context.fillText(grid.unitAt(cursor.coor()).name, 172 - grid.unitAt(cursor.coor()).name.length * 7.4, 224 + 81);
 				
 				context.fillStyle = "#f8f7f5";
-				context.fillRect(10 + 86, 40 + 70 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillRect(10 + 86, 40 + 70 + 224, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
 				context.fillStyle = "#f6f4e9";
-				context.fillRect(10 + 86, 40 + 71 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillRect(10 + 86, 40 + 71 + 224, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
 				context.fillStyle = "#f2ecc7";
-				context.fillRect(10 + 86, 40 + 72 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillRect(10 + 86, 40 + 72 + 224, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
 				context.fillStyle = "#f0e9bb";
-				context.fillRect(10 + 86, 40 + 73 + 224, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-				cursor_tile.unit.image.drawOnScreenScaled(20, 21 + 224, 56, 56);
+				context.fillRect(10 + 86, 40 + 73 + 224, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
+				grid.unitAt(cursor.coor()).image.drawOnScreenScaled(20, 21 + 224, 56, 56);
 			} else {
-				characterPane.drawOnScreen(0, 0);
+				IMAGES.characterPane.drawOnScreen(0, 0);
 				context.font = "bold 17px Verdana";
 				context.fillStyle = "#000000";
-				currentHPString = "" + cursor_tile.unit.currentHP;
+				currentHPString = "" + grid.unitAt(cursor.coor()).currentHP;
 				context.fillText(currentHPString, 148 - 10 * currentHPString.length, 103);
-				context.fillText("" + cursor_tile.unit.maxHP, 173, 103);
+				context.fillText("" + grid.unitAt(cursor.coor()).maxHP, 173, 103);
 				context.font = "bold 18px Courier";
-				context.fillText(cursor_tile.unit.name, 172 - cursor_tile.unit.name.length * 7.4, 81);
+				context.fillText(grid.unitAt(cursor.coor()).name, 172 - grid.unitAt(cursor.coor()).name.length * 7.4, 81);
 				
 				context.fillStyle = "#f8f7f5";
-				context.fillRect(10 + 86, 40 + 70, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillRect(10 + 86, 40 + 70, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
 				context.fillStyle = "#f6f4e9";
-				context.fillRect(10 + 86, 40 + 71, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillRect(10 + 86, 40 + 71, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
 				context.fillStyle = "#f2ecc7";
-				context.fillRect(10 + 86, 40 + 72, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
+				context.fillRect(10 + 86, 40 + 72, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
 				context.fillStyle = "#f0e9bb";
-				context.fillRect(10 + 86, 40 + 73, 100 * cursor_tile.unit.currentHP / cursor_tile.unit.maxHP, 1);
-				cursor_tile.unit.image.drawOnScreenScaled(20, 21, 56, 56);
+				context.fillRect(10 + 86, 40 + 73, 100 * grid.unitAt(cursor.coor()).currentHP / grid.unitAt(cursor.coor()).maxHP, 1);
+				grid.unitAt(cursor.coor()).image.drawOnScreenScaled(20, 21, 56, 56);
 			}
 		}
 	}
