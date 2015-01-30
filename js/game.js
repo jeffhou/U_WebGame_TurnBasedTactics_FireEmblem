@@ -45,7 +45,7 @@ function hashCoor (coor) {
 	return coor.x * 1000 + coor.y;
 }
 function unhashCoor (hashedCoor) {
-	return [parseInt(hashedCoor/1000), hashedCoor%1000];
+	return new Coor(parseInt(hashedCoor / 1000), hashedCoor % 1000);
 }
 
 //SUNG TIL HERE WOAH
@@ -124,6 +124,40 @@ function Terrain (traversable) {
 } Terrain.prototype.setUnit = function (unit) {
 	this.unit = unit;
 };
+
+function generateMovementRange (unit) {
+	availableMoves = [];
+	availableMoves.push(hashCoor(unit.coor()));
+	attackMoveRange = [];
+	
+	var startIndex = 0;
+	var endIndex = availableMoves.length;
+	for (i = 0; i < unit.move; i++) {
+		for (j = startIndex; j < endIndex; j++) {
+			for(k = 0; k < CONSTANTS.hashedDirections.length; k++){
+				var hashedTile = CONSTANTS.hashedDirections[k] + availableMoves[j];
+				if (availableMoves.indexOf(hashedTile) == -1) { // move not already in list
+					if (grid.tileAt(unhashCoor(hashedTile)).traversable == true) {
+						// line below says you can't move through other ppl's units
+						if (grid.tileAt(unhashCoor(hashedTile)).unit == null || grid.tileAt(unhashCoor(hashedTile)).unit.playerID == game.currentPlayer) {
+							availableMoves.push(hashedTile);
+						}
+					}
+				} //?? LOR 8)
+			}
+		}
+		startIndex = endIndex;
+		endIndex = availableMoves.length;
+	}
+	for (i = 0; i < availableMoves.length; i++) {
+		for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
+			var hashedTile = CONSTANTS.hashedDirections[j] + availableMoves[i];
+			if (availableMoves.indexOf(hashedTile) == -1 && attackMoveRange.indexOf(hashedTile) == -1) {
+				attackMoveRange.push(hashedTile);
+			}
+		}
+	}
+}
 
 var units = [];
 units.push(new Unit("Seth", 10, 3, 4, "images/character.png", 0));
@@ -238,33 +272,7 @@ function processInputs () {
 					&& grid.unitAt(cursor.coor()).playerID == game.currentPlayer
 					&& grid.unitAt(cursor.coor()).active) { // cursor is on an active unit belonging to the current player
 				grid.selectedObject = grid.unitAt(cursor.coor());
-				availableMoves = [];
-				availableMoves.push(hashCoor(cursor.coor()));
-				attackMoveRange = [];
-				for(i = 0; i < grid.unitAt(cursor.coor()).move; i++){
-					var old_length = availableMoves.length;
-					for(j = 0; j < old_length; j++){
-						for(k = 0; k < CONSTANTS.hashedDirections.length; k++){
-							//console.log("i: " + i + " j: " + j + " k: " + k);
-							if(availableMoves.indexOf(CONSTANTS.hashedDirections[k] + availableMoves[j]) == -1) { // move not already in list
-								if(grid.grid[unhashCoor(CONSTANTS.hashedDirections[k] + availableMoves[j])[0]][unhashCoor(CONSTANTS.hashedDirections[k] + availableMoves[j])[1]].traversable == true) {
-									// line below says you can't move through other ppl's units
-									if(grid.grid[unhashCoor(CONSTANTS.hashedDirections[k] + availableMoves[j])[0]][unhashCoor(CONSTANTS.hashedDirections[k] + availableMoves[j])[1]].unit == null || grid.grid[unhashCoor(CONSTANTS.hashedDirections[k] + availableMoves[j])[0]][unhashCoor(CONSTANTS.hashedDirections[k] + availableMoves[j])[1]].unit.playerID == game.currentPlayer) {
-										availableMoves.push(CONSTANTS.hashedDirections[k] + availableMoves[j]);									
-									}
-								}
-
-							} //?? LOR 8)
-						}
-					}
-				}
-				for (i = 0; i < availableMoves.length; i++) {
-					for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
-						if(availableMoves.indexOf(CONSTANTS.hashedDirections[j] + availableMoves[i]) == -1 && attackMoveRange.indexOf(CONSTANTS.hashedDirections[j] + availableMoves[i]) == -1) {
-							attackMoveRange.push(CONSTANTS.hashedDirections[j] + availableMoves[i]);
-						}
-					}
-				}
+				generateMovementRange(grid.selectedObject);
 				game.phase = "unit selected";
 			}
 		} else if (game.phase == "unit selected") { //moving
@@ -339,8 +347,6 @@ function processInputs () {
 						}
 					}
 				}
-				
-				// 
 				grid.selectedObject = null;
 				game.phase = "neutral";
 				availableMoves = [];
@@ -348,7 +354,6 @@ function processInputs () {
 			} else {
 				console.log("invalid click");
 			}
-			
 			// unit needs to perform action or wait
 			// check to see if there are any other units of the current player who is active, if none exist, end turn
 		}
@@ -380,9 +385,7 @@ function drawAll () {
 			grid.unitOnScreen(coor).image.drawOnGrid(coor);
 		}
 	});
-	
 	cursor.draw(); // draws the cursor
-	
 	if (game.phase == "action menu" /*8 row*/) {
 		if (cursor.x - grid.xDisplace < 8) {
 			context.font = "bold 18px Verdana";
@@ -450,7 +453,7 @@ function drawAll () {
 
 var main = function () {
 	processInputs();
-    drawAll();
+	drawAll();
     requestAnimationFrame(main);
 };
 main(); // why 2 mains? bern, PS: I forgot where the first portion of mine ended but I did comment up there
