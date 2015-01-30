@@ -16,8 +16,6 @@ function Game (numPlayers) {		//sets initial game parameters? woah?
 	this.phase = "neutral";			//im assuming this is defined somewhere
 }
 var game = new Game(2);				//initialize game object! woah!
-
-
 //dunno how this syntax works:
 var CONSTANTS = new function () { //Lors notes different ways to make class; this is a singleton (sftwr design pattern) there can only be one instance of this class. 
 	this.hashedDirections = [-1000, -1, 1, 1000];
@@ -47,9 +45,6 @@ function hashCoor (coor) {
 function unhashCoor (hashedCoor) {
 	return new Coor(parseInt(hashedCoor / 1000), hashedCoor % 1000);
 }
-
-//SUNG TIL HERE WOAH
-
 
 function Cursor() {
 	this.imageObject = new ImageObject ("images/cursor.png");
@@ -206,8 +201,6 @@ function Grid () {
 };
 var grid = new Grid();
 
-
-
 function processInputs () {
 	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
 		if (game.phase == "action menu") {
@@ -281,12 +274,10 @@ function processInputs () {
 				availableMoves = [];
 				attackMoveRange = [];
 				for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
-					
-						attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
+					attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
 				}
 				game.phase = "action menu";
 				action_menu_selection = 0;
-				//console.log
 				// unit just moved
 			} else {
 				console.log("invalid click");	
@@ -312,8 +303,6 @@ function processInputs () {
 						}
 					}
 				}
-				
-				// 
 				grid.selectedObject = null;
 				game.phase = "neutral";
 				availableMoves = [];
@@ -331,7 +320,6 @@ function processInputs () {
 					//do nothing
 				}
 				grid.selectedObject.active = false;
-				// TODO: should make this into a function
 				var allInactive = true;
 				for (i = 0; i < units.length; i++) {
 					if (units[i].playerID == game.currentPlayer && units[i].active) {
@@ -386,7 +374,7 @@ function drawAll () {
 		}
 	});
 	cursor.draw(); // draws the cursor
-	if (game.phase == "action menu" /*8 row*/) {
+	if (game.phase == "action menu") {
 		if (cursor.x - grid.xDisplace < 8) {
 			context.font = "bold 18px Verdana";
 			context.fillStyle = "#ffffff";
