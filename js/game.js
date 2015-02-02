@@ -154,24 +154,6 @@ function generateMovementRange (unit) {
 	}
 }
 
-function allInactive () {
-    var allInactive = true;
-    for (i = 0; i < units.length; i++) {
-        if (units[i].playerID == game.currentPlayer && units[i].active) {
-            allInactive = false;
-            break;
-        }
-    }
-    return allInactive;
-}
-function nextPlayer () {
-    game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-    for (i = 0; i < units.length; i++) {
-        if (units[i].playerID == game.currentPlayer) {
-            units[i].active = true;
-        }
-    }
-}
 var units = [];
 units.push(new Unit("Seth", 10, 3, 4, "images/character.png", 0));
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
@@ -303,10 +285,23 @@ function processInputs () {
 		} else if (game.phase == "action menu") { //attacking
 			if (action_menu_selection == 0) {
 				game.phase = "unit attacking";
-			} else if (action_menu_selection == 1){
+			} else {
 				grid.selectedObject.active = false;
-				if (allInactive()) {
-					nextPlayer();
+				// TODO: should make this into a function
+				var allInactive = true;
+				for (i = 0; i < units.length; i++) {
+					if (units[i].playerID == game.currentPlayer && units[i].active) {
+						allInactive = false;
+						break;
+					}
+				}
+				if (allInactive) {
+					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+					for (i = 0; i < units.length; i++) {
+						if (units[i].playerID == game.currentPlayer) {
+							units[i].active = true;
+						}
+					}
 				}
 				grid.selectedObject = null;
 				game.phase = "neutral";
@@ -325,8 +320,20 @@ function processInputs () {
 					//do nothing
 				}
 				grid.selectedObject.active = false;
-				if (allInactive()) {
-					nextPlayer();
+				var allInactive = true;
+				for (i = 0; i < units.length; i++) {
+					if (units[i].playerID == game.currentPlayer && units[i].active) {
+						allInactive = false;
+						break;
+					}
+				}
+				if (allInactive) {
+					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+					for (i = 0; i < units.length; i++) {
+						if (units[i].playerID == game.currentPlayer) {
+							units[i].active = true;
+						}
+					}
 				}
 				grid.selectedObject = null;
 				game.phase = "neutral";
