@@ -349,6 +349,27 @@ function processInputs () {
 	}
 }
 
+function drawActionMenu (listOfOptions) {
+    var xStart = 0;
+    if (cursor.x - grid.xDisplace < 8) {
+        xStart = 360;
+    } else {
+        xStart = 20;
+    }
+    context.font = "bold 18px Verdana";
+    context.fillStyle = "#ffffff";
+    for (i = 0; i < listOfOptions.length; i++) {
+        if (i == 0) {
+            IMAGES.menu_top.drawOnScreen(xStart, 0);
+        } else {
+            IMAGES.menu_mid.drawOnScreen(xStart, 20 + i * 38);
+        }
+        context.fillText(listOfOptions[i], xStart + 31, 85 + i * 38);
+    }
+    IMAGES.menu_bot.drawOnScreen(xStart, i * 38 + 20);
+    IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (action_menu_selection));
+}
+
 function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
 	
@@ -375,25 +396,7 @@ function drawAll () {
 	});
 	cursor.draw(); // draws the cursor
 	if (game.phase == "action menu") {
-		if (cursor.x - grid.xDisplace < 8) {
-			context.font = "bold 18px Verdana";
-			context.fillStyle = "#ffffff";
-			IMAGES.menu_top.drawOnScreen(360, 0);
-			IMAGES.menu_mid.drawOnScreen(360, 58);
-			IMAGES.menu_bot.drawOnScreen(360, 1 * 38 + 58);
-			IMAGES.menu_cursor.drawOnScreen(340, 25 + 38 * (action_menu_selection));
-			context.fillText("Attack", 391, 85);
-			context.fillText("Wait", 391, 85 + 38); // if the other character is withing 8 squares of your character give the options to attack or wait?
-		} else {
-			context.font = "bold 18px Verdana";
-			context.fillStyle = "#ffffff";
-			IMAGES.menu_top.drawOnScreen(20, 0);
-			IMAGES.menu_mid.drawOnScreen(20, 58);
-			IMAGES.menu_bot.drawOnScreen(20, 1 * 38 + 58);
-			IMAGES.menu_cursor.drawOnScreen(0, 25 + 38 * (1 - 1));
-			context.fillText("Attack", 51, 85);
-			context.fillText("Wait", 51, 85 + 38);
-		}
+		drawActionMenu(["Attack", "Items", "Wait"]);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
 		if (grid.unitAt(cursor.coor()) != null) {
 			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
