@@ -111,6 +111,14 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	this.y = 0;
 } Unit.prototype.coor = function () {
 	return new Coor(this.x, this.y);
+}; Unit.prototype.canAttack = function () {
+    for (var i = 0; i < CONSTANTS.hashedDirections.length; i++) {
+        var hashedTile = CONSTANTS.hashedDirections[i] + hashCoor(this.coor());
+        if (grid.unitAt(unhashCoor(hashedTile)) && grid.unitAt(unhashCoor(hashedTile)).playerID != this.playerID) {
+            return true;
+        }
+    }
+    return false;
 };
 
 function Terrain (traversable) {
@@ -152,6 +160,15 @@ function generateMovementRange (unit) {
 			}
 		}
 	}
+}
+
+function populateActionMenu () {
+    var actionMenu = [];
+    if (grid.selectedObject.canAttack()) {
+        actionMenu.push("Attack");
+    }
+    actionMenu.push("Wait");
+    return actionMenu;
 }
 
 var units = [];
@@ -222,7 +239,7 @@ function processInputs () {
     if (40 in keysDown) { // Player holding down
 		if (game.phase == "action menu") {
 			action_menu_selection++;
-			if (action_menu_selection == 2) {
+			if (action_menu_selection == availableActions.length) {
 				action_menu_selection = 1;
 			}
 		} else {
@@ -283,9 +300,9 @@ function processInputs () {
 				console.log("invalid click");	
 			}
 		} else if (game.phase == "action menu") { //attacking
-			if (action_menu_selection == 0) {
+			if (availableActions[action_menu_selection] == "Attack") {
 				game.phase = "unit attacking";
-			} else {
+			} else if (availableActions[action_menu_selection] == "Wait") {
 				grid.selectedObject.active = false;
 				// TODO: should make this into a function
 				var allInactive = true;
@@ -396,7 +413,8 @@ function drawAll () {
 	});
 	cursor.draw(); // draws the cursor
 	if (game.phase == "action menu") {
-		drawActionMenu(["Attack", "Items", "Wait"]);
+        availableActions = populateActionMenu();
+		drawActionMenu(availableActions);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
 		if (grid.unitAt(cursor.coor()) != null) {
 			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
