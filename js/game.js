@@ -56,6 +56,41 @@ var IMAGES = new function () {
 	this.wrapperImage = new ImageObject("images/vba-window.png");
 };
 
+
+
+/**
+ * Class that contains the cursor used in the game. Self-explanatory for the
+ * most part.
+ */
+function Cursor() {
+	this.imageObject = new ImageObject ("images/cursor.png");
+	this.x = 0;
+	this.y = 0;
+	
+} Cursor.prototype.coor = function () {
+	return new Coor(this.x, this.y);
+}; Cursor.prototype.draw = function () {
+	this.imageObject.drawOnGrid(cursor.coor().screenify());
+}; Cursor.prototype.coorOnScreen = function () {
+    return this.coor().screenify();
+}; cursor = new Cursor();
+
+/**
+ * Class that encapsulates coordinates. Screenify and unscreenify change
+ * the displacements from the top left of the screen to the top left of the
+ * entire map.
+ */
+function Coor (x, y) {
+	this.x = x;
+	this.y = y;
+} Coor.prototype.equals = function (coor) {
+	if (coor instanceof Coor) return this.x == coor.x && this.y == coor.y;
+	return false;
+}; Coor.prototype.unscreenify = function () {
+	return new Coor(this.x + grid.xDisplace, this.y + grid.yDisplace);
+}; Coor.prototype.screenify = function () {
+	return new Coor(this.x - grid.xDisplace, this.y - grid.yDisplace);
+};
 /**
  * We hash coordinates to integers so that we can store them in arrays and
  * use array methods without programming our own. As long as x and y are both
@@ -69,43 +104,24 @@ function unhashCoor (hashedCoor) {
 }
 
 /**
- * Cursor 
+ * ImageObject encapsulates the necessary functions to load and print an
+ * image. Only after an image loads does it actually display on the screen.
+ * If an image does not load, you can assume either image is missing or name
+ * is misspelled. (when you set the src for an image, it begins loading)
  */
-function Cursor() {
-	this.imageObject = new ImageObject ("images/cursor.png");
-	this.x = 0;
-	this.y = 0;
-	
-} Cursor.prototype.coor = function () {
-	return new Coor(this.x, this.y);
-}; Cursor.prototype.draw = function () {
-	this.imageObject.drawOnGrid(cursor.coor().screenify());
-}; Cursor.prototype.coorOnScreen = function () {
-    //this.imageObject.
-}; cursor = new Cursor();
-
-function Coor (x, y) {
-	this.x = x;
-	this.y = y;
-} Coor.prototype.equals = function (coor) {
-	if (coor instanceof Coor) return this.x == coor.x && this.y == coor.y;
-	return false;
-}; Coor.prototype.unscreenify = function () {
-	return new Coor(this.x + grid.xDisplace, this.y + grid.yDisplace);
-}; Coor.prototype.screenify = function () {
-	return new Coor(this.x - grid.xDisplace, this.y - grid.yDisplace);
-};
-
 function ImageObject (imagePath) {
-	this.image = new Image(); // creates a new image BER
-	this.image.ready = false; 		// doesn't load the image? BERN
-	this.image.onload = function () { // as soon as the page has been loaded, do this function BERN
-		this.ready = true;		//??LOR what is going on 
+	this.image = new Image();
+	this.image.ready = false;
+	this.image.onload = function () {
+		this.ready = true;
 	}
-	this.image.src = imagePath; // sets the imagepath to url? BER
-} ImageObject.prototype.draw = function (x, y) { //draws starting at the x and y values? BERN
-	//TODO: Should not draw if not on canvas or not on VBA screen (if relevant)
-	if (this.image.ready) { // if the image is ready draw it centered at the specified x and y coordinates? BER
+	this.image.src = imagePath;
+} ImageObject.prototype.draw = function (x, y) {
+    /**
+     * Draws self with upper-left corner at x, y.
+     * TODO: Should not draw if not on canvas or not on VBA screen (if relevant)
+     */
+	if (this.image.ready) {
 		context.drawImage(this.image, x, y);
 	}
 }; ImageObject.prototype.drawScaled = function (x, y, width, height) {
@@ -114,7 +130,10 @@ function ImageObject (imagePath) {
 		context.drawImage(this.image, x, y, width, height);
 	}
 }; ImageObject.prototype.drawWithDisplacement = function (x, y, displaceX, displaceY) {
-	this.draw(x + displaceX, y + displaceY); // moves the drawing? so the character can move around the screen? BERN
+    /**
+     * Draws with displacement.
+     */
+	this.draw(x + displaceX, y + displaceY);
 }; ImageObject.prototype.drawOnScreen = function (x, y) {
 	this.drawWithDisplacement(x, y, 10, 40);
 }; ImageObject.prototype.drawOnGrid = function (coor) { // draws the background?
@@ -321,7 +340,7 @@ function processInputs () {
 		if (game.phase == "action menu") {
 			action_menu_selection++;
 			if (action_menu_selection == availableActions.length) {
-				action_menu_selection = 1;
+				action_menu_selection - = 1;
 			}
 		} else {
 			if(cursor.y != grid.height - 1) {
@@ -449,7 +468,7 @@ function processInputs () {
 
 function drawActionMenu (listOfOptions) {
     var xStart = 0;
-    if (cursor.x - grid.xDisplace < 8) {
+    if (cursor.coorOnScreen().x < 8) {
         xStart = 360;
     } else {
         xStart = 20;
@@ -497,7 +516,7 @@ function drawAll () {
         availableActions = populateActionMenu();
 		drawActionMenu(availableActions);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
-        if (cursor.x - grid.xDisplace < 8) {
+        if (cursor.coorOnScreen().x < 8) {
             IMAGES.terrainPane.drawOnScreen(380, 220);
             context.font = "bold 17px Verdana";
             context.fillStyle = "#ffffff";
@@ -522,7 +541,7 @@ function drawAll () {
         }
         
 		if (grid.unitAt(cursor.coor()) != null) {
-			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
+			if (cursor.coorOnScreen().x < 8 && cursor.coorOnScreen().y < 5) {
 				IMAGES.characterPane.drawOnScreen(0, 224);
 				context.font = "bold 17px Verdana";
 				context.fillStyle = "#000000";
