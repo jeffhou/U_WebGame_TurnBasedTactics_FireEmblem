@@ -1,29 +1,43 @@
+/**
+ * Adds Event Listeners for keyboard events (pressing down and pressing up) and
+ * these listeners save the events into the dictionary keysDown for use later.
+ */
 var keysDown = {};
-addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	//eventlisteners! so that the game knows to watch out for keypresses! woah!
+addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
 
-var canvas = document.createElement("canvas"); //this creates the canvas! all the stuff we see exists on the canvas! woah!
-var context = canvas.getContext("2d");	//canvas specifications
+/**
+ * Initial setup for the webapp. First creates a canvas, makes it 2D, and
+ * sets the dimensions of the canvas. (Everything is drawn on the canvas)
+ */
+var canvas = document.createElement("canvas");
+var context = canvas.getContext("2d");
+canvas.width = 500; canvas.height = 369;
+document.body.appendChild(canvas);
 
-canvas.width = 500; canvas.height = 369;	//canvas specifications (size)
-document.body.appendChild(canvas);			//place canvas in the main html code? woah?
-attackMoveRange = [];
-availableMoves = [];
-function Game (numPlayers) {		//sets initial game parameters? woah?
-	this.numPlayers = numPlayers;
+/**
+ * Defines the Game class which contains the overall setup of the game.
+ */
+function Game (numPlayers) {
+	this.numPlayers = numPlayers;  // TODO: move to Level class once defined.
 	this.currentPlayer = 0;
 	this.turnMode = 0;
-	this.phase = "neutral";			//im assuming this is defined somewhere
-}
-var game = new Game(2);				//initialize game object! woah!
-//dunno how this syntax works:
-var CONSTANTS = new function () { //Lors notes different ways to make class; this is a singleton (sftwr design pattern) there can only be one instance of this class. 
+	this.phase = "neutral";  // defines which phase user is in
+} var game = new Game(2);
+
+/**
+ * Constants singleton, collection of a lot of magic numbers
+ */
+var CONSTANTS = new function () {
 	this.hashedDirections = [-1000, -1, 1, 1000];
-	this.tileWidth = 32;			//game map specifications
-	this.mapWidth = 15;
-	this.mapHeight = 10;
+    // we hash coordinates to deal with primitives instead of objects
+	this.tileWidth = 32;  // tiles are 32x32 pixels
+	this.mapWidth = 15; this.mapHeight = 10;  // screen is 15x10 tiles
 };
 
+/**
+ * Collection of imageObjects.
+ */
 var IMAGES = new function () {
 	this.menu_top = new ImageObject ("images/menu-top.png");
 	this.menu_mid = new ImageObject ("images/menu-middle.png");
@@ -42,7 +56,11 @@ var IMAGES = new function () {
 	this.wrapperImage = new ImageObject("images/vba-window.png");
 };
 
-//im guessing these functions parse coordinates in the tile system so that we can refer to tiles easily
+/**
+ * We hash coordinates to integers so that we can store them in arrays and
+ * use array methods without programming our own. As long as x and y are both
+ * between 0 and 999 inclusive, the coordinates and the hash are 1-to-1
+ */
 function hashCoor (coor) {
 	return coor.x * 1000 + coor.y;
 }
@@ -50,6 +68,9 @@ function unhashCoor (hashedCoor) {
 	return new Coor(parseInt(hashedCoor / 1000), hashedCoor % 1000);
 }
 
+/**
+ * Cursor 
+ */
 function Cursor() {
 	this.imageObject = new ImageObject ("images/cursor.png");
 	this.x = 0;
@@ -59,8 +80,9 @@ function Cursor() {
 	return new Coor(this.x, this.y);
 }; Cursor.prototype.draw = function () {
 	this.imageObject.drawOnGrid(cursor.coor().screenify());
-}
-cursor = new Cursor();
+}; Cursor.prototype.coorOnScreen = function () {
+    //this.imageObject.
+}; cursor = new Cursor();
 
 function Coor (x, y) {
 	this.x = x;
@@ -101,6 +123,8 @@ function ImageObject (imagePath) {
 	this.drawScaled(x + 10, y + 40, width, height);
 };
 
+attackMoveRange = [];
+availableMoves = [];
 function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the variables for the units and sets their original location to the origin BER
 	this.name = name;
 	this.inventory = [];
