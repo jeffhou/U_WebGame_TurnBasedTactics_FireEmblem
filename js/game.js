@@ -103,7 +103,7 @@ function ImageObject (imagePath) {
 
 function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the variables for the units and sets their original location to the origin BER
 	this.name = name;
-	this.name = name;
+	this.inventory = [];
 	this.maxHP = maxHP;
 	this.currentHP = maxHP;
 	this.attack = attack;
@@ -123,7 +123,9 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
         }
     }
     return false;
-};
+}; Unit.prototype.hasItems = function () {
+    return this.inventory.length != 0;
+}
 
 function Terrain (terrainType) {
 	//this.walkable = walkable; // sets the terrain's traversible field to the value inputted, walkable or not walkable so you can toggle whether or not a character can go somewhere?
@@ -214,6 +216,9 @@ function populateActionMenu () {
     var actionMenu = [];
     if (grid.selectedObject.canAttack()) {
         actionMenu.push("Attack");
+    }
+    if (grid.selectedObject.hasItems()) {
+        actionMenu.push("Item");
     }
     actionMenu.push("Wait");
     return actionMenu;
