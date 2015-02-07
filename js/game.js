@@ -343,7 +343,7 @@ function processInputs () {
 		if (game.phase == "action menu") {
 			action_menu_selection++;
 			if (action_menu_selection == availableActions.length) {
-				action_menu_selection - = 1;
+				action_menu_selection -= 1;
 			}
 		} else {
 			if(cursor.y != grid.height - 1) {
