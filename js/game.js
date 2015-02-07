@@ -30,11 +30,15 @@ var IMAGES = new function () {
 	this.menu_bot = new ImageObject ("images/menu-bottom.png");
 	this.menu_cursor = new ImageObject ("images/menu-cursor.png");
 	this.terrainMapObjects = {};
-	this.terrainMapObjects[false] = new ImageObject("images/wall_terrain.png");
-	this.terrainMapObjects[true] = new ImageObject("images/grass_terrain.png");
+	this.terrainMapObjects[0] = new ImageObject("images/Plain.png");
+	this.terrainMapObjects[1] = new ImageObject("images/Peak.png");
+    this.terrainMapObjects[2] = new ImageObject("images/River.png");
+    this.terrainMapObjects[3] = new ImageObject("images/Bridge.png");
+    this.terrainMapObjects[4] = new ImageObject("images/Forest.png");
 	this.blueHighlight = new ImageObject("images/blue_highlight2.png");
 	this.redHighlight = new ImageObject("images/red_highlight1.png");
 	this.characterPane = new ImageObject("images/character_pane.png");
+    this.terrainPane = new ImageObject("images/terrain_pane.png");
 	this.wrapperImage = new ImageObject("images/vba-window.png");
 };
 
@@ -121,9 +125,53 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
     return false;
 };
 
-function Terrain (traversable) {
-	this.traversable = traversable; // sets the terrain's traversible field to the value inputted, traversable or not traversable so you can toggle whether or not a character can go somewhere?
+function Terrain (terrainType) {
+	//this.walkable = walkable; // sets the terrain's traversible field to the value inputted, walkable or not walkable so you can toggle whether or not a character can go somewhere?
 	this.unit = null;            //KAR what is dis
+    this.type = terrainType;  // numeric representation of the type
+    switch (this.type) {
+        case 0:
+            this.name = "Plain";
+            this.walkable = true;
+            this.flyable = true;
+            this.defense = 0;
+            this.avoid = 0;
+            break;
+        case 1:
+            this.name = "Peak";
+            this.walkable = false;
+            this.flyable = true;
+            this.defense = 2;
+            this.avoid = 40;
+            break;
+        case 2:
+            this.name = "River";
+            this.walkable = false;
+            this.flyable = true;
+            this.defense = 0;
+            this.avoid = 0;
+            break;
+        case 3:
+            this.name = "Bridge";
+            this.walkable = true;
+            this.flyable = true;
+            this.defense = 0;
+            this.avoid = 0;
+            break;
+        case 4:
+            this.name = "Forest";
+            this.walkable = true;
+            this.flyable = true;
+            this.defense = 1;
+            this.avoid = 20;
+            break;
+        default:
+            this.name = "Plain";
+            this.walkable = true;
+            this.flyable = true;
+            this.defense = 0;
+            this.avoid = 0;
+    }
 } Terrain.prototype.setUnit = function (unit) {
 	this.unit = unit;
 };
@@ -140,7 +188,7 @@ function generateMovementRange (unit) {
 			for(k = 0; k < CONSTANTS.hashedDirections.length; k++){
 				var hashedTile = CONSTANTS.hashedDirections[k] + availableMoves[j];
 				if (availableMoves.indexOf(hashedTile) == -1) { // move not already in list
-					if (grid.tileAt(unhashCoor(hashedTile)).traversable == true) {
+					if (grid.tileAt(unhashCoor(hashedTile)).walkable == true) {
 						// line below says you can't move through other ppl's units
 						if (grid.tileAt(unhashCoor(hashedTile)).unit == null || grid.tileAt(unhashCoor(hashedTile)).unit.playerID == game.currentPlayer) {
 							availableMoves.push(hashedTile);
@@ -172,9 +220,9 @@ function populateActionMenu () {
 }
 
 var units = [];
-units.push(new Unit("Seth", 10, 3, 4, "images/character.png", 0));
+units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0));
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
-units.push(new Unit("Cutthroat", 10, 3, 4, "images/monster.png", 1));
+units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1));
 
 function Grid () {
 	this.grid = [];
@@ -185,9 +233,13 @@ function Grid () {
 		this.grid.push([]);
 		for (j = 0; j < this.height; j++) {
 			if (i == 0 || j == 0 || i == this.width - 1 || j == this.height - 1) {
-				this.grid[i].push(new Terrain(false));
-			} else {
-				this.grid[i].push(new Terrain(true));
+				this.grid[i].push(new Terrain(1));
+			} else if ((i * 2 + j * j) % 35 == 4) {
+                this.grid[i].push(new Terrain(2));
+            } else if ((i * 2 + j * j) % 6 == 1) {
+                this.grid[i].push(new Terrain(4));
+            } else {
+				this.grid[i].push(new Terrain(0));
 			}
 		}
 	}
@@ -391,7 +443,7 @@ function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
 	
 	grid.iterateScreen(function (coor) {  
-		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).traversable].drawOnGrid(coor);
+		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).type].drawOnGrid(coor);
 	});
 	
 	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the visible grid
@@ -416,6 +468,30 @@ function drawAll () {
         availableActions = populateActionMenu();
 		drawActionMenu(availableActions);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
+        if (cursor.x - grid.xDisplace < 8) {
+            IMAGES.terrainPane.drawOnScreen(380, 220);
+            context.font = "bold 17px Verdana";
+            context.fillStyle = "#ffffff";
+            context.fillText(grid.tileAt(cursor.coor()).name, 426 - 3.5 * grid.tileAt(cursor.coor()).name.length, 220 + 40 + 17 + 20);
+            context.font = "bold 14px Verdana";
+            context.fillText("DEF.", 395, 320);
+            context.fillText("AVO.", 395, 336);
+            var avoid = grid.tileAt(cursor.coor()).avoid;
+            context.fillText(grid.tileAt(cursor.coor()).defense, 460, 320);
+            context.fillText(avoid, 470 - 10 * avoid.toString().length, 336);
+        } else {
+            IMAGES.terrainPane.drawOnScreen(380 - 370, 220);
+            context.font = "bold 17px Verdana";
+            context.fillStyle = "#ffffff";
+            context.fillText(grid.tileAt(cursor.coor()).name, 426 - 3.5 * grid.tileAt(cursor.coor()).name.length - 370, 220 + 40 + 17 + 20);
+            context.font = "bold 14px Verdana";
+            context.fillText("DEF.", 395 - 370, 320);
+            context.fillText("AVO.", 395 - 370, 336);
+            var avoid = grid.tileAt(cursor.coor()).avoid;
+            context.fillText(grid.tileAt(cursor.coor()).defense, 460 - 370, 320);
+            context.fillText(avoid, 470 - 370 - 10 * avoid.toString().length, 336);
+        }
+        
 		if (grid.unitAt(cursor.coor()) != null) {
 			if (cursor.x - grid.xDisplace < 8 && cursor.y - grid.yDisplace < 5) {
 				IMAGES.characterPane.drawOnScreen(0, 224);
