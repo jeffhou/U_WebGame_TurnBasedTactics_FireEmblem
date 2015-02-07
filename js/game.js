@@ -300,6 +300,9 @@ function Grid () {
 var grid = new Grid();
 
 function processInputs () {
+	
+	
+
 	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
 		if (game.phase == "action menu") {
 			action_menu_selection--;
@@ -413,7 +416,10 @@ function processInputs () {
 					if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
 						units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
 						grid.grid[cursor.x][cursor.y].unit = null;
+					} else {
+						grid.selectedObject.currentHP -= grid.unitAt(cursor.coor()).attack;				
 					}
+					
 				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
 					//do nothing
 				}
