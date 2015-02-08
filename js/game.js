@@ -1,3 +1,91 @@
+/** BERNIE THIS IS OUR SHIT:*/
+
+function Item(name, price, imagePath, itemID){
+	this.name = name;
+	this.price = price;
+	this.image = new ImageObject (imagePath);
+	this.itemID = itemID;
+}
+
+function QuestItem(){
+	this.prototype = new Item(name, price, imagePath, itemID)
+
+}
+
+function SellableItem(name, price, imagePath, itemID, uses){
+	this.prototype = new Item(name, price, imagePath, itemID)
+	this.uses = uses
+}
+
+function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex){
+	this.prototype = new SellableItem(name, price, imagePath, itemID, uses)
+	this.range = range;
+	this.weight = weight;
+	this.might = might;
+	this.hit = hit;
+	this.crit = crit;
+	this.rank = rank;
+	this.wex = wex;
+	this.type = type;
+
+
+	switch (this.type) {
+        case 0:
+            this.weaponType = "Sword";
+            
+            break;
+        case 1:
+        	this.weaponType = "Lance"
+
+        	break;
+        case 2:
+        	this.weaponType = "Axe"
+
+        	break;
+        case 3:
+        	this.weaponType = "Bow"
+
+        	break;
+        case 4:
+        	this.weaponType = "Dark Tome"
+
+        	break;
+        case 5:
+        	this.weaponType = "Light Tome"
+
+        	break;
+        case 6:
+        	this.weaponType = "Anima Tome"
+
+        	break;
+        case 7:
+        	this.weaponType = "Staff"
+
+        	break;
+        default:
+            this.weaponType = "Sword"
+
+        	break;
+    }
+
+}
+
+
+
+function ConsumableItem(name, price, imagePath, itemID, uses){
+	this.prototype = new SellableItem(name, price, imagePath, itemID, uses)
+}
+
+
+
+
+
+
+
+
+
+/**===================================================================================*/
+
 /**
  * Adds Event Listeners for keyboard events (pressing down and pressing up) and
  * these listeners save the events into the dictionary keysDown for use later.
@@ -137,6 +225,8 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	this.playerID = playerID;
 	this.x = 0;
 	this.y = 0;
+
+	this.equipped = null;
 } Unit.prototype.coor = function () {
 	return new Coor(this.x, this.y);
 }; Unit.prototype.canAttack = function () {
@@ -149,6 +239,16 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
     return false;
 }; Unit.prototype.hasItems = function () {
     return this.inventory.length != 0;
+}; Unit.prototype.giveItem = function (item){
+	if (this.inventory.length < 6){
+		this.inventory.push(item);
+	}
+	if (this.equipped == null){	//TODO: check if equippable
+		this.equipped = this.inventory.length - 1;
+		this.attack = this.attack + this.inventory[this.equipped].might;
+	}
+}; Unit.prototype.removeItem = function (item){
+	this.inventory.splice(item);
 }
 
 function Terrain (terrainType) {
@@ -248,10 +348,17 @@ function populateActionMenu () {
     return actionMenu;
 }
 
+
+//Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
+
 var units = [];
 units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0));
+units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)) //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
+units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 1, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2))
+units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 2, 3))
 units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1));
+units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 3, 45, 1, 10, 8, 0.75, 0, 2, "E", 1))
 
 function Grid () {
 	this.grid = [];
@@ -383,6 +490,8 @@ function processInputs () {
 		} else if (game.phase == "action menu") { //attacking
 			if (availableActions[action_menu_selection] == "Attack") {
 				game.phase = "unit attacking";
+			//} else if (availableActions[action_menu_selection] == "Item"){
+				//game.phase = "action menu" //TODO
 			} else if (availableActions[action_menu_selection] == "Wait") {
 				grid.selectedObject.active = false;
 				// TODO: should make this into a function
@@ -409,6 +518,9 @@ function processInputs () {
 		} else if (game.phase == "unit attacking") { //attacking
 			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
 				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
+
+					game.currentPlayer.inventory[game.currentPlayer.equipped].uses -= 1;  //TODO: actually implement durability
+
 					grid.unitAt(cursor.coor()).currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
 					if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
 						units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
