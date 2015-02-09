@@ -1,24 +1,32 @@
-/** BERNIE THIS IS OUR SHIT:*/
+/** ITEMS: (i actually dont think inheritance helps whatsoever with this)*/
 
 function Item(name, price, imagePath, itemID){
 	this.name = name;
 	this.price = price;
 	this.image = new ImageObject (imagePath);
 	this.itemID = itemID;
+	this.usable = false;
 }
 
 function QuestItem(){
-	this.prototype = new Item(name, price, imagePath, itemID)
+	QuestItem.prototype = Object.create(Item.prototype);
 
 }
 
 function SellableItem(name, price, imagePath, itemID, uses){
-	this.prototype = new Item(name, price, imagePath, itemID)
+	SellableItem.prototype = Object.create(Item.prototype);
 	this.uses = uses
 }
 
 function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex){
-	this.prototype = new SellableItem(name, price, imagePath, itemID, uses)
+	Weapon.prototype = Object.create(SellableItem.prototype);
+	this.name = name;
+	this.price = price;
+	this.image = new ImageObject (imagePath);
+	this.itemID = itemID;
+
+	this.uses = uses;
+
 	this.range = range;
 	this.weight = weight;
 	this.might = might;
@@ -29,7 +37,7 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
 	this.type = type;
 
 
-	switch (this.type) {
+	switch (this.type) { //TODO: add weapon triangle and all that
         case 0:
             this.weaponType = "Sword";
             
@@ -72,8 +80,28 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
 
 
 
-function ConsumableItem(name, price, imagePath, itemID, uses){
-	this.prototype = new SellableItem(name, price, imagePath, itemID, uses)
+function ConsumableItem(name, price, imagePath, itemID, uses, type, effect){
+	ConsumableItem.prototype = Object.create(SellableItem.prototype);
+	this.name = name;
+	this.price = price;
+	this.image = new ImageObject (imagePath);
+	this.itemID = itemID;
+	
+	this.usable = true;
+	this.uses = uses;
+
+	this.type = type;
+	this.effect = effect;
+	switch (this.type) {	//probably will have to change this later
+        case 0:
+            this.effectType = "Heal";
+            
+            break;
+        default:
+            this.effectType = "Sword"
+
+        	break;
+    }
 }
 
 
@@ -227,6 +255,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	this.y = 0;
 
 	this.equipped = null;
+
 } Unit.prototype.coor = function () {
 	return new Coor(this.x, this.y);
 }; Unit.prototype.canAttack = function () {
@@ -239,16 +268,36 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
     return false;
 }; Unit.prototype.hasItems = function () {
     return this.inventory.length != 0;
-}; Unit.prototype.giveItem = function (item){
+}; Unit.prototype.giveItem = function (item) {
 	if (this.inventory.length < 6){
 		this.inventory.push(item);
 	}
 	if (this.equipped == null){	//TODO: check if equippable
-		this.equipped = this.inventory.length - 1;
-		this.attack = this.attack + this.inventory[this.equipped].might;
+		this.equipItem(this.inventory.length - 1);
 	}
-}; Unit.prototype.removeItem = function (item){
-	this.inventory.splice(item);
+}; Unit.prototype.removeItem = function (index) { //this is pretty useless
+	this.inventory.splice(index, 1);
+}; Unit.prototype.updateInventory = function () {
+	temp = []
+	for (i = 0; i < this.inventory.length; i++) {
+		if (this.inventory[i].uses > 0) {
+			temp.push(this.inventory[i]);
+		} else if (i == this.equipped) {
+			this.attack -= this.inventory[this.equipped].might;
+			this.equipped = null;
+		}
+	}
+	this.inventory = temp;
+	if (this.equipped == null) { 
+		for (i = 0; i < this.inventory.length; i++) {
+			if (this.inventory[i].itemID == 0) {
+				this.equipItem(i);
+			}
+		}
+	}
+}; Unit.prototype.equipItem = function (index) {
+	this.equipped = index;
+	this.attack = this.attack + this.inventory[this.equipped].might;
 }
 
 function Terrain (terrainType) {
@@ -343,9 +392,46 @@ function populateActionMenu () {
     }
     if (grid.selectedObject.hasItems()) {
         actionMenu.push("Item");
+        actionMenu.push("Trade");
     }
     actionMenu.push("Wait");
     return actionMenu;
+}
+
+function populateItemMenu (unit) {
+	var itemMenu = [];
+	for (i = 0; i < unit.inventory.length; i++) {
+		if (i == unit.equipped) {
+			itemMenu.push(unit.inventory[i].name.concat(" (E)"));
+		}
+		else {
+			itemMenu.push(unit.inventory[i].name);
+		}
+	}
+	itemMenu.push("Back");
+	return itemMenu;
+}
+
+function populateItemMenu2 (item) {
+	var itemMenu2 = [];
+	
+	itemMenu2.push(item.effectType);
+	//MORE TO COME
+
+	itemMenu2.push("Back");
+	return itemMenu2;
+}
+
+function populateTradeMenu (unit) {
+	var tradeMenu = [];
+	tradeMenu.push(unit.name);
+	for (i = 0; i < unit.inventory.length; i++) {
+		
+		tradeMenu.push(unit.inventory[i].name);
+		
+	}
+	tradeMenu.push("Back");
+	return tradeMenu;
 }
 
 
@@ -353,12 +439,17 @@ function populateActionMenu () {
 
 var units = [];
 units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0));
+//Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)) //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
+
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
-units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 1, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2))
-units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 2, 3))
+//Eirika's items
+units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)) //TODO: add rapier's special shit
+units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10))
+
 units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1));
-units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 3, 45, 1, 10, 8, 0.75, 0, 2, "E", 1))
+//goblin's items
+units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1))
 
 function Grid () {
 	this.grid = [];
@@ -408,7 +499,7 @@ var grid = new Grid();
 
 function processInputs () {
 	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
-		if (game.phase == "action menu") {
+		if (game.phase == "action menu" || game.phase == "item menu" || game.phase == "item menu 2" || game.phase == "trade menu 1" || game.phase == "trade menu 2") {
 			action_menu_selection--;
 			if (action_menu_selection == -1) {
 				action_menu_selection = 0;
@@ -425,7 +516,7 @@ function processInputs () {
 		
     }
     if (40 in keysDown) { // Player holding down
-		if (game.phase == "action menu") {
+		if (game.phase == "action menu" || game.phase == "item menu" || game.phase == "item menu 2" || game.phase == "trade menu 1" || game.phase == "trade menu 2") { //JEFF ILL LEAVE THIS TO YOU TO CLEAN UP
 			action_menu_selection++;
 			if (action_menu_selection == availableActions.length) {
 				action_menu_selection = 1;
@@ -441,7 +532,7 @@ function processInputs () {
 		delete keysDown[40]; //?? LOR IDK WHAT ARE THESE DELETE
     }
     if (37 in keysDown) { // Player holding left
-        if (game.phase != "action menu") {
+        if (game.phase != "action menu" && game.phase != "item menu" && game.phase != "item menu 2" && game.phase != "trade menu 1" && game.phase != "trade menu 2") {
 			if(cursor.x != 0) {
 				cursor.x -= 1;
 			}
@@ -453,7 +544,7 @@ function processInputs () {
 		delete keysDown[37];
     }
     if (39 in keysDown) { // Player holding right
-		if (game.phase != "action menu") {
+		if (game.phase != "action menu" && game.phase != "item menu" && game.phase != "item menu 2" && game.phase != "trade menu 1" && game.phase != "trade menu 2") {
 			if(cursor.x != grid.width - 1) {
 				cursor.x += 1;
 			}
@@ -490,8 +581,10 @@ function processInputs () {
 		} else if (game.phase == "action menu") { //attacking
 			if (availableActions[action_menu_selection] == "Attack") {
 				game.phase = "unit attacking";
-			//} else if (availableActions[action_menu_selection] == "Item"){
-				//game.phase = "action menu" //TODO
+			} else if (availableActions[action_menu_selection] == "Item") {
+				game.phase = "item menu";
+			} else if (availableActions[action_menu_selection] == "Trade") {
+				game.phase = "unit trading";
 			} else if (availableActions[action_menu_selection] == "Wait") {
 				grid.selectedObject.active = false;
 				// TODO: should make this into a function
@@ -515,13 +608,63 @@ function processInputs () {
 				availableMoves = [];
 				attackMoveRange = [];
 			}
+		} else if (game.phase == "item menu") {
+			if (availableActions[action_menu_selection] == "Back"){
+				game.phase = "action menu";
+			}
+			else {
+				selectedItem = grid.selectedObject.inventory[action_menu_selection]
+				game.phase = "item menu 2";
+				
+			}
+		} else if (game.phase == "item menu 2") {
+			if (availableActions[action_menu_selection] == "Back"){
+				game.phase = "item menu";
+			}
+			else {
+				if (availableActions[action_menu_selection] == "Heal") { //generalize this shit
+					healingFactor = selectedItem.effect;
+					game.phase = "unit healing";
+				}
+			}
+		} else if (game.phase == "trade menu 1") {
+			if (availableActions[action_menu_selection] == "Back") {
+				game.phase = "action menu";
+			} else if (action_menu_selection == 0) {
+
+			}
+			else {
+				selectedItemIndex = action_menu_selection - 1;
+				game.phase = "trade menu 2";
+			}
+		} else if (game.phase == "trade menu 2") {
+			if (availableActions[action_menu_selection] == "Back") {
+				game.phase = "trade menu 1";
+			} else if (action_menu_selection == 0) {
+
+			}
+			else {
+				selectedItem1 = grid.selectedObject.inventory[selectedItemIndex];
+				selectedItem2 = grid.unitAt(cursor.coor()).inventory[action_menu_selection - 1];
+				grid.selectedObject.inventory.splice(selectedItemIndex, 1, selectedItem2);
+				grid.unitAt(cursor.coor()).inventory.splice(action_menu_selection - 1, 1, selectedItem1);
+				grid.selectedObject.updateInventory();
+				grid.unitAt(cursor.coor()).updateInventory();
+				game.phase = "action menu";
+			}
 		} else if (game.phase == "unit attacking") { //attacking
 			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
 				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
 
-					game.currentPlayer.inventory[game.currentPlayer.equipped].uses -= 1;  //TODO: actually implement durability
-
+					
 					grid.unitAt(cursor.coor()).currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
+					if (grid.selectedObject.equipped != null) {
+						grid.selectedObject.inventory[grid.selectedObject.equipped].uses -= 1;
+						grid.selectedObject.updateInventory();
+					}
+					
+					//TODO implement wex
+
 					if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
 						units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
 						grid.grid[cursor.x][cursor.y].unit = null;
@@ -554,6 +697,53 @@ function processInputs () {
 			}
 			// unit needs to perform action or wait
 			// check to see if there are any other units of the current player who is active, if none exist, end turn
+		} else if (game.phase == "unit healing") { //healing (NOTE: CAN OVERHEAL, LOL)
+			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
+				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
+
+					grid.unitAt(cursor.coor()).currentHP += healingFactor; 
+					selectedItem.uses -= 1;
+					grid.selectedObject.updateInventory();
+				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
+					//do nothing
+				}
+				grid.selectedObject.active = false;
+				var allInactive = true;
+				for (i = 0; i < units.length; i++) {
+					if (units[i].playerID == game.currentPlayer && units[i].active) {
+						allInactive = false;
+						break;
+					}
+				}
+				if (allInactive) {
+					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+					for (i = 0; i < units.length; i++) {
+						if (units[i].playerID == game.currentPlayer) {
+							units[i].active = true;
+						}
+					}
+				}
+				grid.selectedObject = null;
+				game.phase = "neutral";
+				availableMoves = [];
+				attackMoveRange = [];
+			} else {
+				console.log("invalid click");
+			}
+		} else if (game.phase == "unit trading") { //trading, currently can trade with yourself and trade multiple times in one turn
+			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
+				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
+
+					game.phase = "trade menu 1";
+				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
+					game.phase = "action menu";
+				}
+				
+				
+				
+			} else {
+				console.log("invalid click");
+			}
 		}
 		delete keysDown[90];
 	}
@@ -579,6 +769,8 @@ function drawActionMenu (listOfOptions) {
     IMAGES.menu_bot.drawOnScreen(xStart, i * 38 + 20);
     IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (action_menu_selection));
 }
+
+
 
 function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
@@ -607,6 +799,18 @@ function drawAll () {
 	cursor.draw(); // draws the cursor
 	if (game.phase == "action menu") {
         availableActions = populateActionMenu();
+		drawActionMenu(availableActions);
+	} else if (game.phase == "item menu"){
+		availableActions = populateItemMenu(grid.selectedObject);
+		drawActionMenu(availableActions);
+	} else if (game.phase == "item menu 2"){
+		availableActions = populateItemMenu2(selectedItem);
+		drawActionMenu(availableActions);
+	} else if (game.phase == "trade menu 1") {
+		availableActions = populateTradeMenu(grid.selectedObject);
+		drawActionMenu(availableActions);
+	} else if (game.phase == "trade menu 2"){ //currently badly implemented (this and the previous few)
+		availableActions = populateTradeMenu(grid.unitAt(cursor.coor()));
 		drawActionMenu(availableActions);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
         if (cursor.x - grid.xDisplace < 8) {
