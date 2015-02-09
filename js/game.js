@@ -294,8 +294,11 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	if (this.equipped == null){	//TODO: check if equippable
 		this.equipItem(this.inventory.length - 1);
 	}
-}; Unit.prototype.removeItem = function (index) { //this is pretty useless
-	this.inventory.splice(index, 1);
+}; Unit.prototype.removeItem = function (index, item) { 
+	this.inventory.splice(index, 1, item);
+	if (this.equipped == index) {
+		this.equipped = null;
+	} 
 }; Unit.prototype.updateInventory = function () {
 	temp = []
 	for (i = 0; i < this.inventory.length; i++) {
@@ -311,6 +314,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 		for (i = 0; i < this.inventory.length; i++) {
 			if (this.inventory[i].itemID == 0) {
 				this.equipItem(i);
+				break;
 			}
 		}
 	}
@@ -433,8 +437,9 @@ function populateItemMenu (unit) {
 
 function populateItemMenu2 (item) {
 	var itemMenu2 = [];
-	
-	itemMenu2.push(item.effectType);
+	if (item.itemID == 1) {
+		itemMenu2.push(item.effectType);
+	}
 	//MORE TO COME
 
 	itemMenu2.push("Back");
@@ -668,8 +673,10 @@ function processInputs () {
 			else {
 				selectedItem1 = grid.selectedObject.inventory[selectedItemIndex];
 				selectedItem2 = grid.unitAt(cursor.coor()).inventory[action_menu_selection - 1];
-				grid.selectedObject.inventory.splice(selectedItemIndex, 1, selectedItem2);
-				grid.unitAt(cursor.coor()).inventory.splice(action_menu_selection - 1, 1, selectedItem1);
+
+				grid.selectedObject.removeItem(selectedItemIndex, selectedItem2);
+				grid.unitAt(cursor.coor()).removeItem(action_menu_selection - 1, selectedItem1);
+				
 				grid.selectedObject.updateInventory();
 				grid.unitAt(cursor.coor()).updateInventory();
 				game.phase = "action menu";
