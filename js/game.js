@@ -285,6 +285,16 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
         }
     }
     return false;
+}; Unit.prototype.canTrade = function () {
+    for (var i = 0; i < CONSTANTS.hashedDirections.length; i++) {
+        var hashedTile = CONSTANTS.hashedDirections[i] + hashCoor(this.coor());
+        if (grid.unitAt(unhashCoor(hashedTile)) && grid.unitAt(unhashCoor(hashedTile)).playerID == this.playerID) {
+            if (grid.selectedObject.hasItems() && grid.unitAt(unhashCoor(hashedTile)).hasItems()) {
+				return true;
+			}
+        }
+    }
+    return false;
 }; Unit.prototype.hasItems = function () {
     return this.inventory.length != 0;
 }; Unit.prototype.giveItem = function (item) {
@@ -294,7 +304,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	if (this.equipped == null){	//TODO: check if equippable
 		this.equipItem(this.inventory.length - 1);
 	}
-}; Unit.prototype.removeItem = function (index, item) { 
+}; Unit.prototype.removeItem = function (index, item) { //either needs to be renamed or changed (currently replaces item)
 	this.inventory.splice(index, 1, item);
 	if (this.equipped == index) {
 		this.equipped = null;
@@ -415,7 +425,9 @@ function populateActionMenu () {
     }
     if (grid.selectedObject.hasItems()) {
         actionMenu.push("Item");
-        actionMenu.push("Trade");
+    }
+    if (grid.selectedObject.canTrade()) {
+    	actionMenu.push("Trade");
     }
     actionMenu.push("Wait");
     return actionMenu;
