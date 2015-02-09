@@ -84,7 +84,7 @@ function ConsumableItem(name, price, imagePath, itemID, uses, type, effect){
 	ConsumableItem.prototype = Object.create(SellableItem.prototype);
 	this.name = name;
 	this.price = price;
-	this.image = new ImageObject (imagePath);
+	this.image = new ImageObject(imagePath);
 	this.itemID = itemID;
 	
 	this.usable = true;
@@ -260,7 +260,11 @@ function ImageObject (imagePath) {
 
 attackMoveRange = [];
 availableMoves = [];
-function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the variables for the units and sets their original location to the origin BER
+
+/**
+ * Class for each controllable unit. Initializes at (0, 0), must be changed.
+ */
+function Unit (name, maxHP, attack, move, imagePath, playerID) {
 	this.name = name;
 	this.inventory = [];
 	this.maxHP = maxHP;
@@ -272,7 +276,6 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) { // set all the 
 	this.playerID = playerID;
 	this.x = 0;
 	this.y = 0;
-
 	this.equipped = null;
 
 } Unit.prototype.coor = function () {
@@ -402,7 +405,7 @@ function generateMovementRange (unit) {
 							availableMoves.push(hashedTile);
 						}
 					}
-				} //?? LOR 8)
+				}
 			}
 		}
 		startIndex = endIndex;
@@ -533,67 +536,73 @@ function Grid () {
 };
 var grid = new Grid();
 
-function processInputs () {
-	
-	
+function MenuCursor () {
+    this.index = 0;
+} MenuCursor.prototype.up = function () {
+    this.index++;
+    if (this.index >= availableActions.length) {
+        this.index = availableActions.length - 1;
+    }
+}; MenuCursor.prototype.down = function () {
+    this.index--;
+    if (this.index < 0) {
+        this.index = 0;
+    }
+}; MenuCursor.prototype.reset = function () {
+    this.index = 0;
+};
+menu_selection = new MenuCursor();
 
-	if (38 in keysDown) { // Player holding the up button       //Karen what is keysDown
-		if (game.phase == "action menu" || game.phase == "item menu" || game.phase == "item menu 2" || game.phase == "trade menu 1" || game.phase == "trade menu 2") {
-			action_menu_selection--;
-			if (action_menu_selection == -1) {
-				action_menu_selection = 0;
-			}
-		} else {
-			if(cursor.y != 0) {   //if the cursor isn't in the top row
+phases_all = ["action menu", "item menu", "item menu 2", "trade menu 1", "trade menu 2"]; // all possible phases just for reference
+function processInputs () {
+    if (game.phase.indexOf("menu") > -1) {  // in a menu
+        if (38 in keysDown) { // Player holding the up button
+            menu_selection.down();
+            delete keysDown[38];
+        }
+        if (40 in keysDown) { // Player holding down
+            menu_selection.up();
+            delete keysDown[40];
+        }
+    } else {  // not a menu
+        if (38 in keysDown) { // Player holding the up button
+            if(cursor.y != 0) {   //if the cursor isn't in the top row
 				cursor.y -= 1;  //when you're going up, you're always decreasing the y value
 			}
 			if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
 				grid.yDisplace--;
 			}
-		}
-		delete keysDown[38];
-		
-    }
-    if (40 in keysDown) { // Player holding down
-		if (game.phase == "action menu" || game.phase == "item menu" || game.phase == "item menu 2" || game.phase == "trade menu 1" || game.phase == "trade menu 2") { //JEFF ILL LEAVE THIS TO YOU TO CLEAN UP
-			action_menu_selection++;
-			if (action_menu_selection == availableActions.length) {
-				action_menu_selection -= 1;
-			}
-		} else {
-			if(cursor.y != grid.height - 1) {
-				cursor.y += 1;
-			}
-			if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
-				grid.yDisplace++;
-			}	
-		}
-		delete keysDown[40]; //?? LOR IDK WHAT ARE THESE DELETE
-    }
-    if (37 in keysDown) { // Player holding left
-        if (game.phase != "action menu" && game.phase != "item menu" && game.phase != "item menu 2" && game.phase != "trade menu 1" && game.phase != "trade menu 2") {
-			if(cursor.x != 0) {
-				cursor.x -= 1;
-			}
-			if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
-				grid.xDisplace--;
-			}
-		}
-		
-		delete keysDown[37];
-    }
-    if (39 in keysDown) { // Player holding right
-		if (game.phase != "action menu" && game.phase != "item menu" && game.phase != "item menu 2" && game.phase != "trade menu 1" && game.phase != "trade menu 2") {
+            delete keysDown[38];
+        }
+        if (40 in keysDown) { // Player holding down
+                if(cursor.y != grid.height - 1) {
+                    cursor.y += 1;
+                }
+                if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
+                    grid.yDisplace++;
+                }
+            delete keysDown[40];
+        }
+        if (37 in keysDown) { // Player holding left
+            if(cursor.x != 0) {
+                cursor.x -= 1;
+            }
+            if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
+                grid.xDisplace--;
+            }
+            delete keysDown[37];
+        }
+        if (39 in keysDown) { // Player holding right
 			if(cursor.x != grid.width - 1) {
 				cursor.x += 1;
 			}
 			if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
 				grid.xDisplace++;
 			}
-		}
-        
-		delete keysDown[39];
+            delete keysDown[39];
+        }
     }
+    
 	if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
 		if (game.phase == "neutral") {//if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
 			if (grid.unitAt(cursor.coor()) != null
@@ -612,19 +621,19 @@ function processInputs () {
 					attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
 				}
 				game.phase = "action menu";
-				action_menu_selection = 0;
+				menu_selection.reset();
 				// unit just moved
 			} else {
 				console.log("invalid click");	
 			}
 		} else if (game.phase == "action menu") { //attacking
-			if (availableActions[action_menu_selection] == "Attack") {
+			if (availableActions[menu_selection.index] == "Attack") {
 				game.phase = "unit attacking";
-			} else if (availableActions[action_menu_selection] == "Item") {
+			} else if (availableActions[menu_selection.index] == "Item") {
 				game.phase = "item menu";
-			} else if (availableActions[action_menu_selection] == "Trade") {
+			} else if (availableActions[menu_selection.index] == "Trade") {
 				game.phase = "unit trading";
-			} else if (availableActions[action_menu_selection] == "Wait") {
+			} else if (availableActions[menu_selection.index] == "Wait") {
 				grid.selectedObject.active = false;
 				// TODO: should make this into a function
 				var allInactive = true;
@@ -648,46 +657,46 @@ function processInputs () {
 				attackMoveRange = [];
 			}
 		} else if (game.phase == "item menu") {
-			if (availableActions[action_menu_selection] == "Back"){
+			if (availableActions[menu_selection.index] == "Back"){
 				game.phase = "action menu";
 			}
 			else {
-				selectedItem = grid.selectedObject.inventory[action_menu_selection]
+				selectedItem = grid.selectedObject.inventory[menu_selection.index]
 				game.phase = "item menu 2";
 				
 			}
 		} else if (game.phase == "item menu 2") {
-			if (availableActions[action_menu_selection] == "Back"){
+			if (availableActions[menu_selection.index] == "Back"){
 				game.phase = "item menu";
 			}
 			else {
-				if (availableActions[action_menu_selection] == "Heal") { //generalize this shit
+				if (availableActions[menu_selection.index] == "Heal") { //generalize this shit
 					healingFactor = selectedItem.effect;
 					game.phase = "unit healing";
 				}
 			}
 		} else if (game.phase == "trade menu 1") {
-			if (availableActions[action_menu_selection] == "Back") {
+			if (availableActions[menu_selection.index] == "Back") {
 				game.phase = "action menu";
-			} else if (action_menu_selection == 0) {
+			} else if (menu_selection.index == 0) {
 
 			}
 			else {
-				selectedItemIndex = action_menu_selection - 1;
+				selectedItemIndex = menu_selection.index - 1;
 				game.phase = "trade menu 2";
 			}
 		} else if (game.phase == "trade menu 2") {
-			if (availableActions[action_menu_selection] == "Back") {
+			if (availableActions[menu_selection.index] == "Back") {
 				game.phase = "trade menu 1";
-			} else if (action_menu_selection == 0) {
+			} else if (menu_selection.index == 0) {
 
 			}
 			else {
 				selectedItem1 = grid.selectedObject.inventory[selectedItemIndex];
-				selectedItem2 = grid.unitAt(cursor.coor()).inventory[action_menu_selection - 1];
+				selectedItem2 = grid.unitAt(cursor.coor()).inventory[menu_selection.index - 1];
 
 				grid.selectedObject.removeItem(selectedItemIndex, selectedItem2);
-				grid.unitAt(cursor.coor()).removeItem(action_menu_selection - 1, selectedItem1);
+				grid.unitAt(cursor.coor()).removeItem(menu_selection.index - 1, selectedItem1);
 				
 				grid.selectedObject.updateInventory();
 				grid.unitAt(cursor.coor()).updateInventory();
@@ -811,7 +820,7 @@ function drawActionMenu (listOfOptions) {
         context.fillText(listOfOptions[i], xStart + 31, 85 + i * 38);
     }
     IMAGES.menu_bot.drawOnScreen(xStart, i * 38 + 20);
-    IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (action_menu_selection));
+    IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (menu_selection.index));
 }
 
 
@@ -929,5 +938,4 @@ var main = function () {
 	processInputs();
 	drawAll();
     requestAnimationFrame(main);
-};
-main(); // why 2 mains? bern, PS: I forgot where the first portion of mine ended but I did comment up there
+}; main();
