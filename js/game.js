@@ -448,7 +448,7 @@ function populateActionMenu () {
     }
     if (grid.selectedUnit.hasItems()) {
         menu.addOption("Item", function () {
-            game.switchPhase("item menu");
+            game.switchPhase("inventory menu");
             populateItemMenu(grid.selectedUnit);
         });
     }
@@ -489,13 +489,13 @@ function populateItemMenu (unit) {
 		if (i == unit.equipped) {
 			menu.addOption(unit.inventory[i].name.concat(" (E)"), function () {
                 selectedItem = grid.selectedUnit.inventory[menu.index]
-				game.switchPhase("item menu 2");
+				game.switchPhase("item usage menu");
                 populateItemMenu2(selectedItem);
             });
 		} else {
             menu.addOption(unit.inventory[i].name, function () {
                 selectedItem = grid.selectedUnit.inventory[menu.index]
-				game.switchPhase("item menu 2");
+				game.switchPhase("item usage menu");
                 populateItemMenu2(selectedItem);
             });
 		}
@@ -547,7 +547,7 @@ function populateItemMenu2 (item) {
 	}
 	//MORE TO COME
     menu.addOption("Back", function () {
-        game.switchPhase("item menu");
+        game.switchPhase("inventory menu");
         populateItemMenu(grid.selectedUnit);
     });
 }
