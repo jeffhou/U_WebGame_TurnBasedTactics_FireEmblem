@@ -342,12 +342,16 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 	this.equipped = index;
 	this.attack = this.attack + this.inventory[this.equipped].might;
 }; Unit.prototype.healUnit = function (amount) {
+	if (this.currentHP >= this.maxHp) {
+		return 0;
+	}
 	if (this.currentHP < this.maxHP) { //needs some notification if else
 		this.currentHP += amount;
 	}
 	if (this.currentHP > this.maxHP) {
 		this.currentHP = this.maxHP;
 	}
+	return 1;
 }
 
 function Tile (terrainType) {
@@ -513,8 +517,8 @@ function populateItemMenu2 (item) {
 		} else if (item.effectType == "Heal self") {
 			menu.addOption("Heal", function () {
 				healingFactor = selectedItem.effect;
-				grid.selectedUnit.healUnit(healingFactor);
-				selectedItem.uses -= 1;
+				selectedItem.uses -= grid.selectedUnit.healUnit(healingFactor);
+				
 				grid.selectedUnit.updateInventory();
 
 				grid.selectedUnit.active = false;
@@ -795,8 +799,8 @@ function processInputs () {
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
 
-                        grid.unitAt(cursor.coor()).healUnit(healingFactor); 
-                        selectedItem.uses -= 1;
+                        selectedItem.uses -= grid.unitAt(cursor.coor()).healUnit(healingFactor); 
+                        
                         grid.selectedUnit.updateInventory();
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
                         //do nothing
