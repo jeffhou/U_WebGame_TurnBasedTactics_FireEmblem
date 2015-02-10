@@ -476,16 +476,18 @@ function populateTradeMenu (unit) {
 var units = [];
 units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0));
 //Seth's items
-units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)) //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
+units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
+units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 1, 'D', 1));
+units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10));
 
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
 //Eirika's items
-units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)) //TODO: add rapier's special shit
-units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10))
+units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)); //TODO: add rapier's special shit
+units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10));
 
 units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1));
 //goblin's items
-units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1))
+units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 
 function Grid () {
 	this.grid = [];
