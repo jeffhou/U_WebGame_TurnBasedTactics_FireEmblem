@@ -141,7 +141,7 @@ function Game (numPlayers) {
 	this.phase = "neutral";  // defines which phase user is in
 } Game.prototype.switchPhase = function (newPhase) {
     this.phase = newPhase;
-    menu_selection.reset();
+    menu.reset();
 }; var game = new Game(2);
 
 /**
@@ -295,7 +295,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
     for (var i = 0; i < CONSTANTS.hashedDirections.length; i++) {
         var hashedTile = CONSTANTS.hashedDirections[i] + hashCoor(this.coor());
         if (grid.unitAt(unhashCoor(hashedTile)) && grid.unitAt(unhashCoor(hashedTile)).playerID == this.playerID) {
-            if (grid.selectedObject.hasItems() && grid.unitAt(unhashCoor(hashedTile)).hasItems()) {
+            if (grid.selectedUnit.hasItems() && grid.unitAt(unhashCoor(hashedTile)).hasItems()) {
 				return true;
 			}
         }
@@ -339,9 +339,9 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 	this.attack = this.attack + this.inventory[this.equipped].might;
 }
 
-function Terrain (terrainType) {
+function Tile (terrainType) {
 	//this.walkable = walkable; // sets the terrain's traversible field to the value inputted, walkable or not walkable so you can toggle whether or not a character can go somewhere?
-	this.unit = null;            //KAR what is dis
+	this.unit = null;  //each tile has a unit
     this.type = terrainType;  // numeric representation of the type
     switch (this.type) {
         case 0:
@@ -386,7 +386,7 @@ function Terrain (terrainType) {
             this.defense = 0;
             this.avoid = 0;
     }
-} Terrain.prototype.setUnit = function (unit) {
+} Tile.prototype.setUnit = function (unit) {
 	this.unit = unit;
 };
 
@@ -425,57 +425,127 @@ function generateMovementRange (unit) {
 }
 
 function populateActionMenu () {
-    var actionMenu = [];
-    if (grid.selectedObject.canAttack()) {
-        actionMenu.push("Attack");
+    menu = new Menu();
+    if (grid.selectedUnit.canAttack()) {
+        menu.addOption("Attack", function () {
+            game.switchPhase("unit attacking");
+        });
     }
-    if (grid.selectedObject.hasItems()) {
-        actionMenu.push("Item");
+    if (grid.selectedUnit.hasItems()) {
+        menu.addOption("Item", function () {
+            game.switchPhase("item menu");
+            populateItemMenu(grid.selectedUnit);
+        });
     }
-    if (grid.selectedObject.canTrade()) {
-    	actionMenu.push("Trade");
+    if (grid.selectedUnit.canTrade()) {
+        menu.addOption("Trade", function () {
+            game.switchPhase("unit trading");
+        });
     }
-    actionMenu.push("Wait");
-    return actionMenu;
+    menu.addOption("Wait", function () {
+        grid.selectedUnit.active = false;
+        // TODO: should make this into a function
+        var allInactive = true;
+        for (i = 0; i < units.length; i++) {
+            if (units[i].playerID == game.currentPlayer && units[i].active) {
+                allInactive = false;
+                break;
+            }
+        }
+        if (allInactive) {
+            game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+            for (i = 0; i < units.length; i++) {
+                if (units[i].playerID == game.currentPlayer) {
+                    units[i].active = true;
+                }
+            }
+        }
+        grid.selectedUnit = null;
+        game.switchPhase("neutral");
+        availableMoves = [];
+        attackMoveRange = [];
+    });
+    //return actionMenu;
 }
 
 function populateItemMenu (unit) {
-	var itemMenu = [];
+    menu = new Menu();
 	for (i = 0; i < unit.inventory.length; i++) {
 		if (i == unit.equipped) {
-			itemMenu.push(unit.inventory[i].name.concat(" (E)"));
-		}
-		else {
-			itemMenu.push(unit.inventory[i].name);
+			menu.addOption(unit.inventory[i].name.concat(" (E)"), function () {
+                selectedItem = grid.selectedUnit.inventory[menu.index]
+				game.switchPhase("item menu 2");
+                populateItemMenu2(selectedItem);
+            });
+		} else {
+            menu.addOption(unit.inventory[i].name, function () {
+                selectedItem = grid.selectedUnit.inventory[menu.index]
+				game.switchPhase("item menu 2");
+                populateItemMenu2(selectedItem);
+            });
 		}
 	}
-	itemMenu.push("Back");
-	return itemMenu;
+	menu.addOption("Back", function () {
+        game.switchPhase("action menu");
+        populateActionMenu();
+    });
 }
 
 function populateItemMenu2 (item) {
-	var itemMenu2 = [];
-	if (item.itemID == 1) {
-		itemMenu2.push(item.effectType);
+	menu = new Menu();
+	if (item.itemID == 1 && item.effectType == "Heal") {
+        menu.addOption("Heal", function () {
+            healingFactor = selectedItem.effect;
+            game.switchPhase("unit healing");
+        });
 	}
 	//MORE TO COME
-
-	itemMenu2.push("Back");
-	return itemMenu2;
+    menu.addOption("Back", function () {
+        game.switchPhase("item menu");
+        populateItemMenu(grid.selectedUnit);
+    });
 }
 
-function populateTradeMenu (unit) {
-	var tradeMenu = [];
-	tradeMenu.push(unit.name);
+function populateTradeMenu1 (unit) { //TODO: Recode to actually be like the game
+	menu = new Menu();
+	menu.addOption(unit.name, function () {});
 	for (i = 0; i < unit.inventory.length; i++) {
-		
-		tradeMenu.push(unit.inventory[i].name);
-		
+		menu.addOption(unit.inventory[i].name, function () {
+            selectedItemIndex = menu.index - 1;
+            game.switchPhase("trade menu 2");
+            populateTradeMenu2(grid.unitAt(cursor.coor()));
+        });
 	}
-	tradeMenu.push("Back");
-	return tradeMenu;
+    menu.addOption("Back", function () {
+        game.switchPhase("action menu");
+        populateActionMenu(); 
+    });
 }
 
+function populateTradeMenu2 (unit) { //TODO: Recode to actually be like the game
+     //currently badly implemented (this and the previous few) - Sung
+     //even after my my refactoring, Sung's above comment applies - Jeff
+	menu = new Menu();
+	menu.addOption(unit.name, function () {});
+	for (i = 0; i < unit.inventory.length; i++) {
+		menu.addOption(unit.inventory[i].name, function () {
+            selectedItem1 = grid.selectedUnit.inventory[selectedItemIndex];
+            selectedItem2 = grid.unitAt(cursor.coor()).inventory[menu.index - 1];
+
+            grid.selectedUnit.removeItem(selectedItemIndex, selectedItem2);
+            grid.unitAt(cursor.coor()).removeItem(menu.index - 1, selectedItem1);
+            
+            grid.selectedUnit.updateInventory();
+            grid.unitAt(cursor.coor()).updateInventory();
+            game.switchPhase("action menu");
+            populateActionMenu();
+        });
+	}
+    menu.addOption("Back", function () {
+        game.switchPhase("trade menu 1");
+        populateTradeMenu1(grid.selectedUnit);
+    });
+}
 
 //Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
 
@@ -497,18 +567,18 @@ function Grid () {
 	this.grid = [];
 	this.width = 15;  this.height = 10;
 	this.xDisplace = 0;  this.yDisplace = 0;
-	this.selectedObject = null;
+	this.selectedUnit = null;
 	for (i = 0; i < this.width; i++) {
 		this.grid.push([]);
 		for (j = 0; j < this.height; j++) {
 			if (i == 0 || j == 0 || i == this.width - 1 || j == this.height - 1) {
-				this.grid[i].push(new Terrain(1));
+				this.grid[i].push(new Tile(1));
 			} else if ((i * 2 + j * j) % 35 == 4) {
-                this.grid[i].push(new Terrain(2));
+                this.grid[i].push(new Tile(2));
             } else if ((i * 2 + j * j) % 6 == 1) {
-                this.grid[i].push(new Terrain(4));
+                this.grid[i].push(new Tile(4));
             } else {
-				this.grid[i].push(new Terrain(0));
+				this.grid[i].push(new Tile(0));
 			}
 		}
 	}
@@ -539,31 +609,39 @@ function Grid () {
 };
 var grid = new Grid();
 
-function MenuCursor () {
+function Menu () {
     this.index = 0;
-} MenuCursor.prototype.up = function () {
+    this.options = [];
+    this.actions = {};
+} Menu.prototype.up = function () {
     this.index++;
-    if (this.index >= availableActions.length) {
-        this.index = availableActions.length - 1;
+    if (this.index >= this.options.length) {
+        this.index = this.options.length - 1;
     }
-}; MenuCursor.prototype.down = function () {
+}; Menu.prototype.down = function () {
     this.index--;
     if (this.index < 0) {
         this.index = 0;
     }
-}; MenuCursor.prototype.reset = function () {
+}; Menu.prototype.reset = function () {
     this.index = 0;
-};
-menu_selection = new MenuCursor();
+}; Menu.prototype.addOption = function (text, action) {
+    this.options.push(text);
+    this.actions[text] = action;
+}; Menu.prototype.go = function () {
+    this.actions[this.options[this.index]]();
+}; menu = new Menu();
 
-phases_all = ["action menu", "item menu", "item menu 2", "trade menu 1", "trade menu 2"]; // all possible phases just for reference
 function processInputs () {
     if (game.phase.indexOf("menu") > -1) {  // in a menu
         if (38 in keysDown) { // Player holding the up button
-            menu_selection.down();
+            menu.down();
         }
         if (40 in keysDown) { // Player holding down
-            menu_selection.up();
+            menu.up();
+        }
+        if (90 in keysDown) {
+            menu.go();
         }
     } else {  // not a menu
         if (38 in keysDown) { // Player holding the up button
@@ -598,201 +676,128 @@ function processInputs () {
 				grid.xDisplace++;
 			}
         }
+        if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
+            if (game.phase == "neutral") {//if (grid.selectedUnit == null) { // no unit selected yet and "a" just pressed
+                if (grid.unitAt(cursor.coor()) != null
+                        && grid.unitAt(cursor.coor()).playerID == game.currentPlayer
+                        && grid.unitAt(cursor.coor()).active) { // cursor is on an active unit belonging to the current player
+                    grid.selectedUnit = grid.unitAt(cursor.coor());
+                    generateMovementRange(grid.selectedUnit);
+                    game.switchPhase("unit selected");
+                }
+            } else if (game.phase == "unit selected") { //moving
+                if (availableMoves.indexOf(hashCoor(cursor.coor())) != -1 && (grid.unitAt(cursor.coor()) == null || grid.unitAt(cursor.coor()) == grid.selectedUnit)) {
+                    grid.placeUnitAt(grid.selectedUnit, cursor.x, cursor.y);
+                    availableMoves = [];
+                    attackMoveRange = [];
+                    for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
+                        attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
+                    }
+                    game.switchPhase("action menu");
+                    populateActionMenu();
+                    menu.reset();
+                    // unit just moved
+                } else {
+                    console.log("invalid click");	
+                }
+            } else if (game.phase == "unit attacking") { //attacking
+                if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
+                    if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
+                        
+                        grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
+                        if (grid.selectedUnit.equipped != null) {
+                            grid.selectedUnit.inventory[grid.selectedUnit.equipped].uses -= 1;
+                            grid.selectedUnit.updateInventory();
+                        }
+                        
+                        //TODO implement wex (weapon experience)
+
+                        if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
+                            units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
+                            grid.grid[cursor.x][cursor.y].unit = null;
+                        } else {
+                            grid.selectedUnit.currentHP -= grid.unitAt(cursor.coor()).attack;				
+                        }
+                        
+                    } else { //didn't attack anyone and just waited (by clicking on ally or ground)
+                        //do nothing
+                    }
+                    grid.selectedUnit.active = false;
+                    var allInactive = true;
+                    for (i = 0; i < units.length; i++) {
+                        if (units[i].playerID == game.currentPlayer && units[i].active) {
+                            allInactive = false;
+                            break;
+                        }
+                    }
+                    if (allInactive) {
+                        game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+                        for (i = 0; i < units.length; i++) {
+                            if (units[i].playerID == game.currentPlayer) {
+                                units[i].active = true;
+                            }
+                        }
+                    }
+                    grid.selectedUnit = null;
+                    game.switchPhase("neutral");
+                    availableMoves = [];
+                    attackMoveRange = [];
+                } else {
+                    console.log("invalid click");
+                }
+                // unit needs to perform action or wait
+                // check to see if there are any other units of the current player who is active, if none exist, end turn
+            } else if (game.phase == "unit healing") { //healing (NOTE: CAN OVERHEAL, LOL)
+                if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
+                    if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
+
+                        grid.unitAt(cursor.coor()).currentHP += healingFactor; 
+                        selectedItem.uses -= 1;
+                        grid.selectedUnit.updateInventory();
+                    } else { //didn't attack anyone and just waited (by clicking on ally or ground)
+                        //do nothing
+                    }
+                    grid.selectedUnit.active = false;
+                    var allInactive = true;
+                    for (i = 0; i < units.length; i++) {
+                        if (units[i].playerID == game.currentPlayer && units[i].active) {
+                            allInactive = false;
+                            break;
+                        }
+                    }
+                    if (allInactive) {
+                        game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+                        for (i = 0; i < units.length; i++) {
+                            if (units[i].playerID == game.currentPlayer) {
+                                units[i].active = true;
+                            }
+                        }
+                    }
+                    grid.selectedUnit = null;
+                    game.switchPhase("neutral");
+                    availableMoves = [];
+                    attackMoveRange = [];
+                } else {
+                    console.log("invalid click");
+                }
+            } else if (game.phase == "unit trading") { //trading, currently can trade with yourself and trade multiple times in one turn
+                if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
+                    if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
+
+                        game.switchPhase("trade menu 1");
+                        populateTradeMenu1(grid.selectedUnit);
+                    } else { //didn't attack anyone and just waited (by clicking on ally or ground)
+                        game.switchPhase("action menu");
+                        populateActionMenu();
+                    }
+                } else {
+                    console.log("invalid click");
+                }
+            }
+        }
     }
     
-	if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
-		if (game.phase == "neutral") {//if (grid.selectedObject == null) { // no unit selected yet and "a" just pressed
-			if (grid.unitAt(cursor.coor()) != null
-					&& grid.unitAt(cursor.coor()).playerID == game.currentPlayer
-					&& grid.unitAt(cursor.coor()).active) { // cursor is on an active unit belonging to the current player
-				grid.selectedObject = grid.unitAt(cursor.coor());
-				generateMovementRange(grid.selectedObject);
-				game.switchPhase("unit selected");
-			}
-		} else if (game.phase == "unit selected") { //moving
-			if (availableMoves.indexOf(hashCoor(cursor.coor())) != -1 && (grid.unitAt(cursor.coor()) == null || grid.unitAt(cursor.coor()) == grid.selectedObject)) {
-				grid.placeUnitAt(grid.selectedObject, cursor.x, cursor.y);
-				availableMoves = [];
-				attackMoveRange = [];
-				for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
-					attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
-				}
-				game.switchPhase("action menu");
-				menu_selection.reset();
-				// unit just moved
-			} else {
-				console.log("invalid click");	
-			}
-		} else if (game.phase == "action menu") { //attacking
-			if (availableActions[menu_selection.index] == "Attack") {
-				game.switchPhase("unit attacking");
-			} else if (availableActions[menu_selection.index] == "Item") {
-				game.switchPhase("item menu");
-			} else if (availableActions[menu_selection.index] == "Trade") {
-				game.switchPhase("unit trading");
-			} else if (availableActions[menu_selection.index] == "Wait") {
-				grid.selectedObject.active = false;
-				// TODO: should make this into a function
-				var allInactive = true;
-				for (i = 0; i < units.length; i++) {
-					if (units[i].playerID == game.currentPlayer && units[i].active) {
-						allInactive = false;
-						break;
-					}
-				}
-				if (allInactive) {
-					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-					for (i = 0; i < units.length; i++) {
-						if (units[i].playerID == game.currentPlayer) {
-							units[i].active = true;
-						}
-					}
-				}
-				grid.selectedObject = null;
-				game.switchPhase("neutral");
-				availableMoves = [];
-				attackMoveRange = [];
-			}
-		} else if (game.phase == "item menu") {
-			if (availableActions[menu_selection.index] == "Back"){
-				game.switchPhase("action menu");
-			}
-			else {
-				selectedItem = grid.selectedObject.inventory[menu_selection.index]
-				game.switchPhase("item menu 2");
-				
-			}
-		} else if (game.phase == "item menu 2") {
-			if (availableActions[menu_selection.index] == "Back"){
-				game.switchPhase("item menu");
-			}
-			else {
-				if (availableActions[menu_selection.index] == "Heal") { //generalize this shit
-					healingFactor = selectedItem.effect;
-					game.switchPhase("unit healing");
-				}
-			}
-		} else if (game.phase == "trade menu 1") {
-			if (availableActions[menu_selection.index] == "Back") {
-				game.switchPhase("action menu");
-			} else if (menu_selection.index == 0) {
-
-			}
-			else {
-				selectedItemIndex = menu_selection.index - 1;
-				game.switchPhase("trade menu 2");
-			}
-		} else if (game.phase == "trade menu 2") {
-			if (availableActions[menu_selection.index] == "Back") {
-				game.switchPhase("trade menu 1");
-			} else if (menu_selection.index == 0) {
-
-			}
-			else {
-				selectedItem1 = grid.selectedObject.inventory[selectedItemIndex];
-				selectedItem2 = grid.unitAt(cursor.coor()).inventory[menu_selection.index - 1];
-
-				grid.selectedObject.removeItem(selectedItemIndex, selectedItem2);
-				grid.unitAt(cursor.coor()).removeItem(menu_selection.index - 1, selectedItem1);
-				
-				grid.selectedObject.updateInventory();
-				grid.unitAt(cursor.coor()).updateInventory();
-				game.switchPhase("action menu");
-			}
-		} else if (game.phase == "unit attacking") { //attacking
-			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
-				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
-
-					
-					grid.unitAt(cursor.coor()).currentHP -= grid.selectedObject.attack; // subtract hp from attacked unit
-					if (grid.selectedObject.equipped != null) {
-						grid.selectedObject.inventory[grid.selectedObject.equipped].uses -= 1;
-						grid.selectedObject.updateInventory();
-					}
-					
-					//TODO implement wex
-
-					if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
-						units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
-						grid.grid[cursor.x][cursor.y].unit = null;
-					} else {
-						grid.selectedObject.currentHP -= grid.unitAt(cursor.coor()).attack;				
-					}
-					
-				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
-					//do nothing
-				}
-				grid.selectedObject.active = false;
-				var allInactive = true;
-				for (i = 0; i < units.length; i++) {
-					if (units[i].playerID == game.currentPlayer && units[i].active) {
-						allInactive = false;
-						break;
-					}
-				}
-				if (allInactive) {
-					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-					for (i = 0; i < units.length; i++) {
-						if (units[i].playerID == game.currentPlayer) {
-							units[i].active = true;
-						}
-					}
-				}
-				grid.selectedObject = null;
-				game.switchPhase("neutral");
-				availableMoves = [];
-				attackMoveRange = [];
-			} else {
-				console.log("invalid click");
-			}
-			// unit needs to perform action or wait
-			// check to see if there are any other units of the current player who is active, if none exist, end turn
-		} else if (game.phase == "unit healing") { //healing (NOTE: CAN OVERHEAL, LOL)
-			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
-				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
-
-					grid.unitAt(cursor.coor()).currentHP += healingFactor; 
-					selectedItem.uses -= 1;
-					grid.selectedObject.updateInventory();
-				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
-					//do nothing
-				}
-				grid.selectedObject.active = false;
-				var allInactive = true;
-				for (i = 0; i < units.length; i++) {
-					if (units[i].playerID == game.currentPlayer && units[i].active) {
-						allInactive = false;
-						break;
-					}
-				}
-				if (allInactive) {
-					game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-					for (i = 0; i < units.length; i++) {
-						if (units[i].playerID == game.currentPlayer) {
-							units[i].active = true;
-						}
-					}
-				}
-				grid.selectedObject = null;
-				game.switchPhase("neutral");
-				availableMoves = [];
-				attackMoveRange = [];
-			} else {
-				console.log("invalid click");
-			}
-		} else if (game.phase == "unit trading") { //trading, currently can trade with yourself and trade multiple times in one turn
-			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
-				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
-
-					game.switchPhase("trade menu 1");
-				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
-					game.switchPhase("action menu");
-				}
-			} else {
-				console.log("invalid click");
-			}
-		}
-	}
+	
     keysDown = {};
 }
 
@@ -814,7 +819,7 @@ function drawActionMenu (listOfOptions) {
         context.fillText(listOfOptions[i], xStart + 31, 85 + i * 38);
     }
     IMAGES.menu_bot.drawOnScreen(xStart, i * 38 + 20);
-    IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (menu_selection.index));
+    IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (menu.index));
 }
 
 
@@ -844,21 +849,8 @@ function drawAll () {
 		}
 	});
 	cursor.draw(); // draws the cursor
-	if (game.phase == "action menu") {
-        availableActions = populateActionMenu();
-		drawActionMenu(availableActions);
-	} else if (game.phase == "item menu"){
-		availableActions = populateItemMenu(grid.selectedObject);
-		drawActionMenu(availableActions);
-	} else if (game.phase == "item menu 2"){
-		availableActions = populateItemMenu2(selectedItem);
-		drawActionMenu(availableActions);
-	} else if (game.phase == "trade menu 1") {
-		availableActions = populateTradeMenu(grid.selectedObject);
-		drawActionMenu(availableActions);
-	} else if (game.phase == "trade menu 2"){ //currently badly implemented (this and the previous few)
-		availableActions = populateTradeMenu(grid.unitAt(cursor.coor()));
-		drawActionMenu(availableActions);
+	if (game.phase.indexOf("menu") > -1) {
+		drawActionMenu(menu.options);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
         if (cursor.coorOnScreen().x < 8) {
             IMAGES.terrainPane.drawOnScreen(380, 220);
