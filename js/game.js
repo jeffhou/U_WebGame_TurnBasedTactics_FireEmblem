@@ -93,8 +93,12 @@ function ConsumableItem(name, price, imagePath, itemID, uses, type, effect){
 	this.type = type;
 	this.effect = effect;
 	switch (this.type) {	//probably will have to change this later
-        case 0:
-            this.effectType = "Heal";
+		case 0:
+			this.effectType = "Heal self";
+
+			break;
+        case 1:
+            this.effectType = "Heal other";
             
             break;
         default:
@@ -337,6 +341,13 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 }; Unit.prototype.equipItem = function (index) {
 	this.equipped = index;
 	this.attack = this.attack + this.inventory[this.equipped].might;
+}; Unit.prototype.healUnit = function (amount) {
+	if (this.currentHP < this.maxHP) { //needs some notification if else
+		this.currentHP += amount;
+	}
+	if (this.currentHP > this.maxHP) {
+		this.currentHP = this.maxHP;
+	}
 }
 
 function Tile (terrainType) {
@@ -493,11 +504,42 @@ function populateItemMenu (unit) {
 
 function populateItemMenu2 (item) {
 	menu = new Menu();
-	if (item.itemID == 1 && item.effectType == "Heal") {
-        menu.addOption("Heal", function () {
-            healingFactor = selectedItem.effect;
-            game.switchPhase("unit healing");
-        });
+	if (item.itemID == 1){
+		if (item.effectType == "Heal other") {
+	        menu.addOption("Heal", function () {
+	            healingFactor = selectedItem.effect;
+	            game.switchPhase("unit healing");
+	        });
+		} else if (item.effectType == "Heal self") {
+			menu.addOption("Heal", function () {
+				healingFactor = selectedItem.effect;
+				grid.selectedUnit.healUnit(healingFactor);
+				selectedItem.uses -= 1;
+				grid.selectedUnit.updateInventory();
+
+				grid.selectedUnit.active = false;
+		        // TODO: should make this into a function
+		        var allInactive = true;
+		        for (i = 0; i < units.length; i++) {
+		            if (units[i].playerID == game.currentPlayer && units[i].active) {
+		                allInactive = false;
+		                break;
+		            }
+		        }
+		        if (allInactive) {
+		            game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+		            for (i = 0; i < units.length; i++) {
+		                if (units[i].playerID == game.currentPlayer) {
+		                    units[i].active = true;
+		                }
+		            }
+		        }
+		        grid.selectedUnit = null;
+		        game.switchPhase("neutral");
+		        availableMoves = [];
+		        attackMoveRange = [];
+			})
+		}
 	}
 	//MORE TO COME
     menu.addOption("Back", function () {
@@ -753,7 +795,7 @@ function processInputs () {
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
 
-                        grid.unitAt(cursor.coor()).currentHP += healingFactor; 
+                        grid.unitAt(cursor.coor()).healUnit(healingFactor); 
                         selectedItem.uses -= 1;
                         grid.selectedUnit.updateInventory();
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
