@@ -139,7 +139,10 @@ function Game (numPlayers) {
 	this.currentPlayer = 0;
 	this.turnMode = 0;
 	this.phase = "neutral";  // defines which phase user is in
-} var game = new Game(2);
+} Game.prototype.switchPhase = function (newPhase) {
+    this.phase = newPhase;
+    menu_selection.reset();
+}; var game = new Game(2);
 
 /**
  * Constants singleton, collection of a lot of magic numbers
@@ -558,11 +561,9 @@ function processInputs () {
     if (game.phase.indexOf("menu") > -1) {  // in a menu
         if (38 in keysDown) { // Player holding the up button
             menu_selection.down();
-            delete keysDown[38];
         }
         if (40 in keysDown) { // Player holding down
             menu_selection.up();
-            delete keysDown[40];
         }
     } else {  // not a menu
         if (38 in keysDown) { // Player holding the up button
@@ -572,16 +573,14 @@ function processInputs () {
 			if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
 				grid.yDisplace--;
 			}
-            delete keysDown[38];
         }
         if (40 in keysDown) { // Player holding down
-                if(cursor.y != grid.height - 1) {
-                    cursor.y += 1;
-                }
-                if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
-                    grid.yDisplace++;
-                }
-            delete keysDown[40];
+            if(cursor.y != grid.height - 1) {
+                cursor.y += 1;
+            }
+            if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
+                grid.yDisplace++;
+            }
         }
         if (37 in keysDown) { // Player holding left
             if(cursor.x != 0) {
@@ -590,7 +589,6 @@ function processInputs () {
             if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
                 grid.xDisplace--;
             }
-            delete keysDown[37];
         }
         if (39 in keysDown) { // Player holding right
 			if(cursor.x != grid.width - 1) {
@@ -599,7 +597,6 @@ function processInputs () {
 			if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
 				grid.xDisplace++;
 			}
-            delete keysDown[39];
         }
     }
     
@@ -610,7 +607,7 @@ function processInputs () {
 					&& grid.unitAt(cursor.coor()).active) { // cursor is on an active unit belonging to the current player
 				grid.selectedObject = grid.unitAt(cursor.coor());
 				generateMovementRange(grid.selectedObject);
-				game.phase = "unit selected";
+				game.switchPhase("unit selected");
 			}
 		} else if (game.phase == "unit selected") { //moving
 			if (availableMoves.indexOf(hashCoor(cursor.coor())) != -1 && (grid.unitAt(cursor.coor()) == null || grid.unitAt(cursor.coor()) == grid.selectedObject)) {
@@ -620,7 +617,7 @@ function processInputs () {
 				for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
 					attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
 				}
-				game.phase = "action menu";
+				game.switchPhase("action menu");
 				menu_selection.reset();
 				// unit just moved
 			} else {
@@ -628,11 +625,11 @@ function processInputs () {
 			}
 		} else if (game.phase == "action menu") { //attacking
 			if (availableActions[menu_selection.index] == "Attack") {
-				game.phase = "unit attacking";
+				game.switchPhase("unit attacking");
 			} else if (availableActions[menu_selection.index] == "Item") {
-				game.phase = "item menu";
+				game.switchPhase("item menu");
 			} else if (availableActions[menu_selection.index] == "Trade") {
-				game.phase = "unit trading";
+				game.switchPhase("unit trading");
 			} else if (availableActions[menu_selection.index] == "Wait") {
 				grid.selectedObject.active = false;
 				// TODO: should make this into a function
@@ -652,42 +649,42 @@ function processInputs () {
 					}
 				}
 				grid.selectedObject = null;
-				game.phase = "neutral";
+				game.switchPhase("neutral");
 				availableMoves = [];
 				attackMoveRange = [];
 			}
 		} else if (game.phase == "item menu") {
 			if (availableActions[menu_selection.index] == "Back"){
-				game.phase = "action menu";
+				game.switchPhase("action menu");
 			}
 			else {
 				selectedItem = grid.selectedObject.inventory[menu_selection.index]
-				game.phase = "item menu 2";
+				game.switchPhase("item menu 2");
 				
 			}
 		} else if (game.phase == "item menu 2") {
 			if (availableActions[menu_selection.index] == "Back"){
-				game.phase = "item menu";
+				game.switchPhase("item menu");
 			}
 			else {
 				if (availableActions[menu_selection.index] == "Heal") { //generalize this shit
 					healingFactor = selectedItem.effect;
-					game.phase = "unit healing";
+					game.switchPhase("unit healing");
 				}
 			}
 		} else if (game.phase == "trade menu 1") {
 			if (availableActions[menu_selection.index] == "Back") {
-				game.phase = "action menu";
+				game.switchPhase("action menu");
 			} else if (menu_selection.index == 0) {
 
 			}
 			else {
 				selectedItemIndex = menu_selection.index - 1;
-				game.phase = "trade menu 2";
+				game.switchPhase("trade menu 2");
 			}
 		} else if (game.phase == "trade menu 2") {
 			if (availableActions[menu_selection.index] == "Back") {
-				game.phase = "trade menu 1";
+				game.switchPhase("trade menu 1");
 			} else if (menu_selection.index == 0) {
 
 			}
@@ -700,7 +697,7 @@ function processInputs () {
 				
 				grid.selectedObject.updateInventory();
 				grid.unitAt(cursor.coor()).updateInventory();
-				game.phase = "action menu";
+				game.switchPhase("action menu");
 			}
 		} else if (game.phase == "unit attacking") { //attacking
 			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
@@ -742,7 +739,7 @@ function processInputs () {
 					}
 				}
 				grid.selectedObject = null;
-				game.phase = "neutral";
+				game.switchPhase("neutral");
 				availableMoves = [];
 				attackMoveRange = [];
 			} else {
@@ -777,7 +774,7 @@ function processInputs () {
 					}
 				}
 				grid.selectedObject = null;
-				game.phase = "neutral";
+				game.switchPhase("neutral");
 				availableMoves = [];
 				attackMoveRange = [];
 			} else {
@@ -787,19 +784,16 @@ function processInputs () {
 			if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedObject.coor())) { //clicked in range
 				if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
 
-					game.phase = "trade menu 1";
+					game.switchPhase("trade menu 1");
 				} else { //didn't attack anyone and just waited (by clicking on ally or ground)
-					game.phase = "action menu";
+					game.switchPhase("action menu");
 				}
-				
-				
-				
 			} else {
 				console.log("invalid click");
 			}
 		}
-		delete keysDown[90];
 	}
+    keysDown = {};
 }
 
 function drawActionMenu (listOfOptions) {
