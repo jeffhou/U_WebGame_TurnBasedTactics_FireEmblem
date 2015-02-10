@@ -449,7 +449,7 @@ function populateActionMenu () {
     if (grid.selectedUnit.hasItems()) {
         menu.addOption("Item", function () {
             game.switchPhase("inventory menu");
-            populateItemMenu(grid.selectedUnit);
+            populateInventoryMenu(grid.selectedUnit);
         });
     }
     if (grid.selectedUnit.canTrade()) {
@@ -483,20 +483,20 @@ function populateActionMenu () {
     //return actionMenu;
 }
 
-function populateItemMenu (unit) {
+function populateInventoryMenu (unit) {
     menu = new Menu();
 	for (i = 0; i < unit.inventory.length; i++) {
 		if (i == unit.equipped) {
 			menu.addOption(unit.inventory[i].name.concat(" (E)"), function () {
                 selectedItem = grid.selectedUnit.inventory[menu.index]
 				game.switchPhase("item usage menu");
-                populateItemMenu2(selectedItem);
+                populateItemUsageMenu(selectedItem);
             });
 		} else {
             menu.addOption(unit.inventory[i].name, function () {
                 selectedItem = grid.selectedUnit.inventory[menu.index]
 				game.switchPhase("item usage menu");
-                populateItemMenu2(selectedItem);
+                populateItemUsageMenu(selectedItem);
             });
 		}
 	}
@@ -506,7 +506,7 @@ function populateItemMenu (unit) {
     });
 }
 
-function populateItemMenu2 (item) {
+function populateItemUsageMenu (item) {
 	menu = new Menu();
 	if (item.itemID == 1){
 		if (item.effectType == "Heal self") {
@@ -543,7 +543,7 @@ function populateItemMenu2 (item) {
 	//MORE TO COME
     menu.addOption("Back", function () {
         game.switchPhase("inventory menu");
-        populateItemMenu(grid.selectedUnit);
+        populateInventoryMenu(grid.selectedUnit);
     });
 }
 
