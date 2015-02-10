@@ -509,12 +509,7 @@ function populateItemMenu (unit) {
 function populateItemMenu2 (item) {
 	menu = new Menu();
 	if (item.itemID == 1){
-		if (item.effectType == "Heal other") {
-	        menu.addOption("Heal", function () {
-	            healingFactor = selectedItem.effect;
-	            game.switchPhase("unit healing");
-	        });
-		} else if (item.effectType == "Heal self") {
+		if (item.effectType == "Heal self") {
 			menu.addOption("Heal", function () {
 				healingFactor = selectedItem.effect;
 				selectedItem.uses -= grid.selectedUnit.healUnit(healingFactor);
@@ -795,39 +790,6 @@ function processInputs () {
                 }
                 // unit needs to perform action or wait
                 // check to see if there are any other units of the current player who is active, if none exist, end turn
-            } else if (game.phase == "unit healing") { //healing (NOTE: CAN OVERHEAL, LOL)
-                if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
-                    if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
-
-                        selectedItem.uses -= grid.unitAt(cursor.coor()).healUnit(healingFactor); 
-                        
-                        grid.selectedUnit.updateInventory();
-                    } else { //didn't attack anyone and just waited (by clicking on ally or ground)
-                        //do nothing
-                    }
-                    grid.selectedUnit.active = false;
-                    var allInactive = true;
-                    for (i = 0; i < units.length; i++) {
-                        if (units[i].playerID == game.currentPlayer && units[i].active) {
-                            allInactive = false;
-                            break;
-                        }
-                    }
-                    if (allInactive) {
-                        game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-                        for (i = 0; i < units.length; i++) {
-                            if (units[i].playerID == game.currentPlayer) {
-                                units[i].active = true;
-                            }
-                        }
-                    }
-                    grid.selectedUnit = null;
-                    game.switchPhase("neutral");
-                    availableMoves = [];
-                    attackMoveRange = [];
-                } else {
-                    console.log("invalid click");
-                }
             } else if (game.phase == "unit trading") { //trading, currently can trade with yourself and trade multiple times in one turn
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
