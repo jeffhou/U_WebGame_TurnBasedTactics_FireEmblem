@@ -196,7 +196,24 @@ function Cursor() {
 	this.imageObject.drawOnGrid(cursor.coor().screenify());
 }; Cursor.prototype.coorOnScreen = function () {
     return this.coor().screenify();
-}; cursor = new Cursor();
+}; Cursor.prototype.up = function () {
+    if(cursor.y != 0) {   //if the cursor isn't in the top row
+        cursor.y -= 1;  //when you're going up, you're always decreasing the y value
+    }
+}; Cursor.prototype.down = function () {
+    if(cursor.y != grid.height - 1) {
+        cursor.y += 1;
+    }
+}; Cursor.prototype.left = function () {
+    if(cursor.x != 0) {
+        cursor.x -= 1;
+    }
+}; Cursor.prototype.right = function () {
+    if(cursor.x != grid.width - 1) {
+        cursor.x += 1;
+    }
+};
+cursor = new Cursor();
 
 /**
  * Class that encapsulates coordinates. Screenify and unscreenify change
@@ -695,33 +712,25 @@ function processInputs () {
         }
     } else {  // not a menu
         if (38 in keysDown) { // Player holding the up button
-            if(cursor.y != 0) {   //if the cursor isn't in the top row
-				cursor.y -= 1;  //when you're going up, you're always decreasing the y value
-			}
+            cursor.up();
 			if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
 				grid.yDisplace--;
 			}
         }
         if (40 in keysDown) { // Player holding down
-            if(cursor.y != grid.height - 1) {
-                cursor.y += 1;
-            }
+            cursor.down();
             if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
                 grid.yDisplace++;
             }
         }
         if (37 in keysDown) { // Player holding left
-            if(cursor.x != 0) {
-                cursor.x -= 1;
-            }
+            cursor.left();
             if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
                 grid.xDisplace--;
             }
         }
         if (39 in keysDown) { // Player holding right
-			if(cursor.x != grid.width - 1) {
-				cursor.x += 1;
-			}
+			cursor.right();
 			if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
 				grid.xDisplace++;
 			}
