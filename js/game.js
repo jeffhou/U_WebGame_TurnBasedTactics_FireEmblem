@@ -193,7 +193,7 @@ function Cursor() {
 } Cursor.prototype.coor = function () {
 	return new Coor(this.x, this.y);
 }; Cursor.prototype.draw = function () {
-	this.imageObject.drawOnGrid(cursor.coor().screenify());
+	this.imageObject.drawOnGrid(cursor.coor());
 }; Cursor.prototype.coorOnScreen = function () {
     return this.coor().screenify();
 }; Cursor.prototype.up = function () {
@@ -212,8 +212,7 @@ function Cursor() {
     if(cursor.x != grid.width - 1) {
         cursor.x += 1;
     }
-};
-cursor = new Cursor();
+}; cursor = new Cursor();
 
 /**
  * Class that encapsulates coordinates. Screenify and unscreenify change
@@ -673,6 +672,19 @@ function Grid () {
 			runnable(new Coor(i, j));
 		}
 	}
+}; Grid.prototype.adjust = function () {
+    if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
+        grid.yDisplace--;
+    }
+    if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
+        grid.yDisplace++;
+    }
+    if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
+        grid.xDisplace--;
+    }
+    if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
+        grid.xDisplace++;
+    }
 };
 var grid = new Grid();
 
@@ -713,27 +725,19 @@ function processInputs () {
     } else {  // not a menu
         if (38 in keysDown) { // Player holding the up button
             cursor.up();
-			if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
-				grid.yDisplace--;
-			}
+			grid.adjust();
         }
         if (40 in keysDown) { // Player holding down
             cursor.down();
-            if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
-                grid.yDisplace++;
-            }
+            grid.adjust();
         }
         if (37 in keysDown) { // Player holding left
             cursor.left();
-            if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
-                grid.xDisplace--;
-            }
+            grid.adjust();
         }
         if (39 in keysDown) { // Player holding right
 			cursor.right();
-			if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
-				grid.xDisplace++;
-			}
+			grid.adjust();
         }
         if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
             if (game.phase == "neutral") {//if (grid.selectedUnit == null) { // no unit selected yet and "a" just pressed
@@ -855,8 +859,8 @@ function drawActionMenu (listOfOptions) {
 function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
 	
-	grid.iterateScreen(function (coor) {  
-		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).type].drawOnGrid(coor);
+	grid.iterateScreen(function (coor) {
+		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).type].drawOnGrid(coor.unscreenify());
 	});
 	
 	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the visible grid
@@ -873,7 +877,7 @@ function drawAll () {
 
 	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the grid
 		if (grid.unitOnScreen(coor)) {
-			grid.unitOnScreen(coor).image.drawOnGrid(coor);
+			grid.unitOnScreen(coor).image.drawOnGrid(coor.unscreenify());
 		}
 	});
 	cursor.draw(); // draws the cursor
