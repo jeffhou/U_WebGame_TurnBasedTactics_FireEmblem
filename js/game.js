@@ -341,18 +341,25 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 }; Unit.prototype.equipItem = function (index) {
 	this.equipped = index;
 	this.attack = this.attack + this.inventory[this.equipped].might;
-}; Unit.prototype.healUnit = function (amount) {
-	if (this.currentHP >= this.maxHp) {
-		return 0;
-	}
-	if (this.currentHP < this.maxHP) { //needs some notification if else
-		this.currentHP += amount;
-	}
+}; Unit.prototype.heal = function (amount) {
+    if (this.currentHP >= this.maxHP) {
+        return 0;
+    }
+    
+    this.currentHP += amount;
 	if (this.currentHP > this.maxHP) {
 		this.currentHP = this.maxHP;
 	}
 	return 1;
-}
+}; Unit.prototype.damage = function (amount) {
+    this.currentHP -= amount;
+    if (this.currentHP <= 0) {
+        this.currentHP = 0;
+        return 0;
+    } else {
+        return 1;
+    }
+};
 
 function Tile (terrainType) {
 	//this.walkable = walkable; // sets the terrain's traversible field to the value inputted, walkable or not walkable so you can toggle whether or not a character can go somewhere?
@@ -512,7 +519,7 @@ function populateItemUsageMenu (item) {
 		if (item.effectType == "Heal self") {
 			menu.addOption("Heal", function () {
 				healingFactor = selectedItem.effect;
-				selectedItem.uses -= grid.selectedUnit.healUnit(healingFactor);
+				selectedItem.uses -= grid.selectedUnit.heal(healingFactor);
 				
 				grid.selectedUnit.updateInventory();
 
@@ -746,20 +753,22 @@ function processInputs () {
             } else if (game.phase == "unit attacking") { //attacking
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
-                        
-                        grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
+                        var battleResult = grid.unitAt(cursor.coor()).damage(grid.selectedUnit.attack);
+                        //grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
                         if (grid.selectedUnit.equipped != null) {
                             grid.selectedUnit.inventory[grid.selectedUnit.equipped].uses -= 1;
                             grid.selectedUnit.updateInventory();
                         }
                         
                         //TODO implement wex (weapon experience)
-
-                        if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
+                        
+                        if (battleResult == 0) {  // if enemy died
                             units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
                             grid.grid[cursor.x][cursor.y].unit = null;
                         } else {
-                            grid.selectedUnit.currentHP -= grid.unitAt(cursor.coor()).attack;				
+                            battleResult = grid.selectedUnit.damage(grid.unitAt(cursor.coor()).attack);
+                            units.splice(units.indexOf(grid.selectedUnit), 1);
+                            grid.grid[grid.selectedUnit.x][grid.selectedUnit.y].unit = null;
                         }
                         
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
