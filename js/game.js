@@ -123,23 +123,18 @@ function ConsumableItem(name, price, imagePath, itemID, uses, type, effect){
  * these listeners save the events into the dictionary keysDown for use later.
  */
 var keysDown = {};
-addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	
+addEventListener("keydown", function (e) { keysDown[e.keyCode] = true }, false);	//eventlisteners! so that the game knows to watch out for keypresses! woah!
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode] }, false);
 
-/**
- * Initial setup for the webapp. First creates a canvas, makes it 2D, and
- * sets the dimensions of the canvas. (Everything is drawn on the canvas)
- */
-var canvas = document.createElement("canvas");
-var context = canvas.getContext("2d");
-canvas.width = 500; canvas.height = 369;
-document.body.appendChild(canvas);
+var canvas = document.createElement("canvas"); //this creates the canvas! all the stuff we see exists on the canvas! woah!
+var context = canvas.getContext("2d");	//canvas specifications
 
-/**
- * Defines the Game class which contains the overall setup of the game.
- */
-function Game (numPlayers) {
-	this.numPlayers = numPlayers;  // TODO: move to Level class once defined.
+canvas.width = 500; canvas.height = 369;	//canvas specifications (size)
+document.body.appendChild(canvas);			//place canvas in the main html code? woah?
+attackMoveRange = [];
+availableMoves = [];
+function Game (numPlayers) {		//sets initial game parameters? woah?
+	this.numPlayers = numPlayers;
 	this.currentPlayer = 0;
 	this.turnMode = 0;
 	this.phase = "neutral";  // defines which phase user is in
@@ -152,15 +147,13 @@ function Game (numPlayers) {
  * Constants singleton, collection of a lot of magic numbers
  */
 var CONSTANTS = new function () {
+
 	this.hashedDirections = [-1000, -1, 1, 1000];
-    // we hash coordinates to deal with primitives instead of objects
-	this.tileWidth = 32;  // tiles are 32x32 pixels
-	this.mapWidth = 15; this.mapHeight = 10;  // screen is 15x10 tiles
+	this.tileWidth = 32;			//game map specifications
+	this.mapWidth = 15;
+	this.mapHeight = 10;
 };
 
-/**
- * Collection of imageObjects.
- */
 var IMAGES = new function () {
 	this.menu_top = new ImageObject ("images/menu-top.png");
 	this.menu_mid = new ImageObject ("images/menu-middle.png");
@@ -179,12 +172,11 @@ var IMAGES = new function () {
 	this.wrapperImage = new ImageObject("images/vba-window.png");
 };
 
-
-
 /**
  * Class that contains the cursor used in the game. Self-explanatory for the
  * most part.
  */
+
 function Cursor() {
 	this.imageObject = new ImageObject ("images/cursor.png");
 	this.x = 0;
@@ -197,6 +189,7 @@ function Cursor() {
 }; Cursor.prototype.coorOnScreen = function () {
     return this.coor().screenify();
 }; cursor = new Cursor();
+
 
 /**
  * Class that encapsulates coordinates. Screenify and unscreenify change
@@ -271,7 +264,8 @@ availableMoves = [];
 /**
  * Class for each controllable unit. Initializes at (0, 0), must be changed.
  */
-function Unit (name, maxHP, attack, move, imagePath, playerID) {
+function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, movement, constitution, aid, traveler,affinity,condition,
+	level, experience, w, l, numBattles) {
 	this.name = name;
 	this.inventory = [];
 	this.maxHP = maxHP;
@@ -284,6 +278,23 @@ function Unit (name, maxHP, attack, move, imagePath, playerID) {
 	this.x = 0;
 	this.y = 0;
 	this.equipped = null;
+	this.strength = strength;
+	this.skill = skill;
+	this.speed = speed;
+	this.luck = luck;
+	this.defense = defense;
+	this.resistance = resistance;
+	this.movement = movement;
+	this.constitution = constitution;
+	this.aid = aid;
+	this.traveler = traveler;
+	this.affinity =affinity;
+	this.condition = condition;
+    this.level = level;
+    this.experience = experience;
+    this.w = w;
+    this.l = l;
+    this.numBattles = numBattles
 
 } Unit.prototype.coor = function () {
 	return new Coor(this.x, this.y);
@@ -596,18 +607,18 @@ function populateTradeMenu2 (unit) { //TODO: Recode to actually be like the game
 //Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
 
 var units = [];
-units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0));
+units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 //Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
 units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 1, 'D', 1));
 units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10));
 
-units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0));
+units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 //Eirika's items
 units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)); //TODO: add rapier's special shit
 units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10));
 
-units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1));
+units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 //goblin's items
 units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 
