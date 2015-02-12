@@ -185,9 +185,25 @@ function Cursor() {
 } Cursor.prototype.coor = function () {
 	return new Coor(this.x, this.y);
 }; Cursor.prototype.draw = function () {
-	this.imageObject.drawOnGrid(cursor.coor().screenify());
+	this.imageObject.drawOnGrid(cursor.coor());
 }; Cursor.prototype.coorOnScreen = function () {
     return this.coor().screenify();
+}; Cursor.prototype.up = function () {
+    if(cursor.y != 0) {   //if the cursor isn't in the top row
+        cursor.y -= 1;  //when you're going up, you're always decreasing the y value
+    }
+}; Cursor.prototype.down = function () {
+    if(cursor.y != grid.height - 1) {
+        cursor.y += 1;
+    }
+}; Cursor.prototype.left = function () {
+    if(cursor.x != 0) {
+        cursor.x -= 1;
+    }
+}; Cursor.prototype.right = function () {
+    if(cursor.x != grid.width - 1) {
+        cursor.x += 1;
+    }
 }; cursor = new Cursor();
 
 
@@ -352,18 +368,25 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 }; Unit.prototype.equipItem = function (index) {
 	this.equipped = index;
 	this.attack = this.attack + this.inventory[this.equipped].might;
-}; Unit.prototype.healUnit = function (amount) {
-	if (this.currentHP >= this.maxHp) {
-		return 0;
-	}
-	if (this.currentHP < this.maxHP) { //needs some notification if else
-		this.currentHP += amount;
-	}
+}; Unit.prototype.heal = function (amount) {
+    if (this.currentHP >= this.maxHP) {
+        return 0;
+    }
+    
+    this.currentHP += amount;
 	if (this.currentHP > this.maxHP) {
 		this.currentHP = this.maxHP;
 	}
 	return 1;
-}
+}; Unit.prototype.damage = function (amount) {
+    this.currentHP -= amount;
+    if (this.currentHP <= 0) {
+        this.currentHP = 0;
+        return 0;
+    } else {
+        return 1;
+    }
+};
 
 function Tile (terrainType) {
 	//this.walkable = walkable; // sets the terrain's traversible field to the value inputted, walkable or not walkable so you can toggle whether or not a character can go somewhere?
@@ -459,8 +482,8 @@ function populateActionMenu () {
     }
     if (grid.selectedUnit.hasItems()) {
         menu.addOption("Item", function () {
-            game.switchPhase("item menu");
-            populateItemMenu(grid.selectedUnit);
+            game.switchPhase("inventory menu");
+            populateInventoryMenu(grid.selectedUnit);
         });
     }
     if (grid.selectedUnit.canTrade()) {
@@ -494,20 +517,20 @@ function populateActionMenu () {
     //return actionMenu;
 }
 
-function populateItemMenu (unit) {
+function populateInventoryMenu (unit) {
     menu = new Menu();
 	for (i = 0; i < unit.inventory.length; i++) {
 		if (i == unit.equipped) {
 			menu.addOption(unit.inventory[i].name.concat(" (E)"), function () {
                 selectedItem = grid.selectedUnit.inventory[menu.index]
-				game.switchPhase("item menu 2");
-                populateItemMenu2(selectedItem);
+				game.switchPhase("item usage menu");
+                populateItemUsageMenu(selectedItem);
             });
 		} else {
             menu.addOption(unit.inventory[i].name, function () {
                 selectedItem = grid.selectedUnit.inventory[menu.index]
-				game.switchPhase("item menu 2");
-                populateItemMenu2(selectedItem);
+				game.switchPhase("item usage menu");
+                populateItemUsageMenu(selectedItem);
             });
 		}
 	}
@@ -517,18 +540,13 @@ function populateItemMenu (unit) {
     });
 }
 
-function populateItemMenu2 (item) {
+function populateItemUsageMenu (item) {
 	menu = new Menu();
 	if (item.itemID == 1){
-		if (item.effectType == "Heal other") {
-	        menu.addOption("Heal", function () {
-	            healingFactor = selectedItem.effect;
-	            game.switchPhase("unit healing");
-	        });
-		} else if (item.effectType == "Heal self") {
+		if (item.effectType == "Heal self") {
 			menu.addOption("Heal", function () {
 				healingFactor = selectedItem.effect;
-				selectedItem.uses -= grid.selectedUnit.healUnit(healingFactor);
+				selectedItem.uses -= grid.selectedUnit.heal(healingFactor);
 				
 				grid.selectedUnit.updateInventory();
 
@@ -558,8 +576,8 @@ function populateItemMenu2 (item) {
 	}
 	//MORE TO COME
     menu.addOption("Back", function () {
-        game.switchPhase("item menu");
-        populateItemMenu(grid.selectedUnit);
+        game.switchPhase("inventory menu");
+        populateInventoryMenu(grid.selectedUnit);
     });
 }
 
@@ -665,6 +683,19 @@ function Grid () {
 			runnable(new Coor(i, j));
 		}
 	}
+}; Grid.prototype.adjust = function () {
+    if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
+        grid.yDisplace--;
+    }
+    if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
+        grid.yDisplace++;
+    }
+    if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
+        grid.xDisplace--;
+    }
+    if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
+        grid.xDisplace++;
+    }
 };
 var grid = new Grid();
 
@@ -704,36 +735,20 @@ function processInputs () {
         }
     } else {  // not a menu
         if (38 in keysDown) { // Player holding the up button
-            if(cursor.y != 0) {   //if the cursor isn't in the top row
-				cursor.y -= 1;  //when you're going up, you're always decreasing the y value
-			}
-			if (grid.yDisplace > 0 && cursor.y - grid.yDisplace == 2) {
-				grid.yDisplace--;
-			}
+            cursor.up();
+			grid.adjust();
         }
         if (40 in keysDown) { // Player holding down
-            if(cursor.y != grid.height - 1) {
-                cursor.y += 1;
-            }
-            if (grid.yDisplace < grid.height - CONSTANTS.mapHeight && cursor.y - grid.yDisplace == CONSTANTS.mapHeight - 3) {
-                grid.yDisplace++;
-            }
+            cursor.down();
+            grid.adjust();
         }
         if (37 in keysDown) { // Player holding left
-            if(cursor.x != 0) {
-                cursor.x -= 1;
-            }
-            if (grid.xDisplace > 0 && cursor.x - grid.xDisplace == 2) {
-                grid.xDisplace--;
-            }
+            cursor.left();
+            grid.adjust();
         }
         if (39 in keysDown) { // Player holding right
-			if(cursor.x != grid.width - 1) {
-				cursor.x += 1;
-			}
-			if (grid.xDisplace < grid.width - CONSTANTS.mapWidth && cursor.x - grid.xDisplace == CONSTANTS.mapWidth - 3) {
-				grid.xDisplace++;
-			}
+			cursor.right();
+			grid.adjust();
         }
         if (90 in keysDown) { // pressed "z" which is actually "a" for our emulator
             if (game.phase == "neutral") {//if (grid.selectedUnit == null) { // no unit selected yet and "a" just pressed
@@ -762,20 +777,22 @@ function processInputs () {
             } else if (game.phase == "unit attacking") { //attacking
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
-                        
-                        grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
+                        var battleResult = grid.unitAt(cursor.coor()).damage(grid.selectedUnit.attack);
+                        //grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
                         if (grid.selectedUnit.equipped != null) {
                             grid.selectedUnit.inventory[grid.selectedUnit.equipped].uses -= 1;
                             grid.selectedUnit.updateInventory();
                         }
                         
                         //TODO implement wex (weapon experience)
-
-                        if (grid.unitAt(cursor.coor()).currentHP <= 0) {  // if enemy died
+                        
+                        if (battleResult == 0) {  // if enemy died
                             units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
                             grid.grid[cursor.x][cursor.y].unit = null;
                         } else {
-                            grid.selectedUnit.currentHP -= grid.unitAt(cursor.coor()).attack;				
+                            battleResult = grid.selectedUnit.damage(grid.unitAt(cursor.coor()).attack);
+                            units.splice(units.indexOf(grid.selectedUnit), 1);
+                            grid.grid[grid.selectedUnit.x][grid.selectedUnit.y].unit = null;
                         }
                         
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
@@ -806,39 +823,6 @@ function processInputs () {
                 }
                 // unit needs to perform action or wait
                 // check to see if there are any other units of the current player who is active, if none exist, end turn
-            } else if (game.phase == "unit healing") { //healing (NOTE: CAN OVERHEAL, LOL)
-                if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
-                    if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
-
-                        selectedItem.uses -= grid.unitAt(cursor.coor()).healUnit(healingFactor); 
-                        
-                        grid.selectedUnit.updateInventory();
-                    } else { //didn't attack anyone and just waited (by clicking on ally or ground)
-                        //do nothing
-                    }
-                    grid.selectedUnit.active = false;
-                    var allInactive = true;
-                    for (i = 0; i < units.length; i++) {
-                        if (units[i].playerID == game.currentPlayer && units[i].active) {
-                            allInactive = false;
-                            break;
-                        }
-                    }
-                    if (allInactive) {
-                        game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-                        for (i = 0; i < units.length; i++) {
-                            if (units[i].playerID == game.currentPlayer) {
-                                units[i].active = true;
-                            }
-                        }
-                    }
-                    grid.selectedUnit = null;
-                    game.switchPhase("neutral");
-                    availableMoves = [];
-                    attackMoveRange = [];
-                } else {
-                    console.log("invalid click");
-                }
             } else if (game.phase == "unit trading") { //trading, currently can trade with yourself and trade multiple times in one turn
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
@@ -886,8 +870,8 @@ function drawActionMenu (listOfOptions) {
 function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
 	
-	grid.iterateScreen(function (coor) {  
-		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).type].drawOnGrid(coor);
+	grid.iterateScreen(function (coor) {
+		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).type].drawOnGrid(coor.unscreenify());
 	});
 	
 	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the visible grid
@@ -904,7 +888,7 @@ function drawAll () {
 
 	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the grid
 		if (grid.unitOnScreen(coor)) {
-			grid.unitOnScreen(coor).image.drawOnGrid(coor);
+			grid.unitOnScreen(coor).image.drawOnGrid(coor.unscreenify());
 		}
 	});
 	cursor.draw(); // draws the cursor
