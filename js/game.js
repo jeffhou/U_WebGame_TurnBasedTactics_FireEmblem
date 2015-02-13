@@ -892,7 +892,12 @@ function drawInventoryPanel (inventory) {
     IMAGES.inventory_highlight.drawOnScreen(xStart + 15, yStart + 30 + 30 * (menu.index));
     for (i = 0; i < inventory.length + 1; i++) {
         if (i != inventory.length) {
-            context.fillText(inventory[i].name, xStart + 50, yStart + 77 + i * 30);
+            if (i == grid.selectedUnit.equipped) {
+                context.fillText(inventory[i].name + " (E)", xStart + 50, yStart + 77 + i * 30);
+            } else {
+                context.fillText(inventory[i].name, xStart + 50, yStart + 77 + i * 30);
+            }
+            
         } else {
             context.fillText("BACK", xStart + 50, yStart + 77 + i * 30);
         }
