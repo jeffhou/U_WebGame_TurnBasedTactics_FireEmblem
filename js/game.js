@@ -75,12 +75,12 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
 
         	break;
     }
-
+    this.itemType = "Weapon";
 }
 
 
 
-function ConsumableItem(name, price, imagePath, itemID, uses, type, effect){
+function ConsumableItem(name, price, imagePath, itemID, uses, type, effect, description){
 	ConsumableItem.prototype = Object.create(SellableItem.prototype);
 	this.name = name;
 	this.price = price;
@@ -106,6 +106,8 @@ function ConsumableItem(name, price, imagePath, itemID, uses, type, effect){
 
         	break;
     }
+    this.itemType = "ConsumableItem";
+    this.description = description;
 }
 
 
@@ -159,6 +161,11 @@ var IMAGES = new function () {
 	this.menu_mid = new ImageObject ("images/menu-middle.png");
 	this.menu_bot = new ImageObject ("images/menu-bottom.png");
 	this.menu_cursor = new ImageObject ("images/menu-cursor.png");
+    this.inventory_top = new ImageObject ("images/inventory_top.png");
+    this.inventory_mid = new ImageObject ("images/inventory_slot.png");
+    this.inventory_bot = new ImageObject ("images/inventory_bottom.png");
+    this.inventory_highlight = new ImageObject ("images/inventory_highlight.png");
+    this.inventory_description = new ImageObject ("images/inventory_description.png");
 	this.terrainMapObjects = {};
 	this.terrainMapObjects[0] = new ImageObject("images/Plain.png");
 	this.terrainMapObjects[1] = new ImageObject("images/Peak.png");
@@ -628,13 +635,13 @@ var units = [];
 units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 //Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
-units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 1, 'D', 1));
-units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10));
+units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 0, 'D', 1));
+units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
 units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 //Eirika's items
 units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)); //TODO: add rapier's special shit
-units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10));
+units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
 units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 //goblin's items
@@ -764,8 +771,10 @@ function processInputs () {
                     grid.placeUnitAt(grid.selectedUnit, cursor.x, cursor.y);
                     availableMoves = [];
                     attackMoveRange = [];
-                    for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
-                        attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
+                    if (grid.selectedUnit.canAttack()) {
+                        for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
+                            attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(cursor.coor()));
+                        }
                     }
                     game.switchPhase("action menu");
                     populateActionMenu();
@@ -865,7 +874,53 @@ function drawActionMenu (listOfOptions) {
     IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (menu.index));
 }
 
-
+function drawInventoryPanel (inventory) {
+    var xStart = 22; var yStart = 16;
+    
+    context.font = "18px Arial";
+    context.fillStyle = "#ffffff";
+    for (i = 0; i < inventory.length + 1; i++) {
+        if (i != inventory.length) {
+            IMAGES.inventory_mid.drawOnScreen(xStart, 15 + yStart + i * 30);
+        } else {
+            IMAGES.inventory_mid.drawOnScreen(xStart, 15 + yStart + i * 30);
+        }
+    }
+    IMAGES.inventory_highlight.drawOnScreen(xStart + 15, yStart + 30 + 30 * (menu.index));
+    for (i = 0; i < inventory.length + 1; i++) {
+        if (i != inventory.length) {
+            context.fillText(inventory[i].name, xStart + 50, yStart + 77 + i * 30);
+        } else {
+            context.fillText("BACK", xStart + 50, yStart + 77 + i * 30);
+        }
+    }
+    IMAGES.inventory_top.drawOnScreen(xStart, yStart);
+    IMAGES.inventory_bot.drawOnScreen(xStart, yStart + i * 30 + 15);
+    IMAGES.menu_cursor.drawOnScreen(xStart - 20, yStart + 16 + 30 * (menu.index));
+    
+    
+    grid.selectedUnit.image.drawOnScreenScaled(270, 60, 130, 130);
+    IMAGES.inventory_description.drawOnScreen(230, 165);
+    context.font = "16px Arial";
+    if (menu.index != inventory.length) {
+        if (inventory[menu.index].itemType == "Weapon") {
+            context.fillText("Type: " + inventory[menu.index].weaponType, 295, 240);
+            context.fillText("Atk", 265, 270);
+            context.fillText("???", 265 + 45, 270);
+            context.fillText("Hit", 265, 300);
+            context.fillText("???", 265 + 45, 300);
+            context.fillText("Crit", 355, 270);
+            context.fillText("???", 355 + 45, 270);
+            context.fillText("Avoid", 355, 300);
+            context.fillText("???", 355 + 45, 300);
+            // find formulas to determine these pl0x.
+        } else {
+            context.fillText(inventory[menu.index].description, 255, 240);
+        }
+    } else {
+        context.fillText("Return to Action Menu", 255, 240);
+    }
+}
 
 function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
@@ -892,7 +947,9 @@ function drawAll () {
 		}
 	});
 	cursor.draw(); // draws the cursor
-	if (game.phase.indexOf("menu") > -1) {
+    if (game.phase == "inventory menu") {
+        drawInventoryPanel(grid.selectedUnit.inventory);
+    } else if (game.phase.indexOf("menu") > -1) {
 		drawActionMenu(menu.options);
 	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
         if (cursor.coorOnScreen().x < 8) {
