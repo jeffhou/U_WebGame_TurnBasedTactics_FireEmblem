@@ -373,8 +373,11 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 		}
 	}
 }; Unit.prototype.equipItem = function (index) {
+	if (this.equipped != null) {
+		this.attack -= this.inventory[this.equipped].might;
+	}
 	this.equipped = index;
-	this.attack = this.attack + this.inventory[this.equipped].might;
+	this.attack += this.inventory[this.equipped].might;
 }; Unit.prototype.heal = function (amount) {
     if (this.currentHP >= this.maxHP) {
         return 0;
@@ -552,7 +555,13 @@ function populateInventoryMenu (unit) {
 
 function populateItemUsageMenu (item) {
 	menu = new Menu();
-	if (item.itemID == 1){
+	if (item.itemID == 0) {
+		menu.addOption("Equip", function () {
+			grid.selectedUnit.equipItem(grid.selectedUnit.inventory.indexOf(selectedItem));
+			game.switchPhase("inventory menu");
+			populateInventoryMenu(grid.selectedUnit);
+		})
+	} else if (item.itemID == 1){
 		if (item.effectType == "Heal self") {
 			menu.addOption("Heal", function () {
 				healingFactor = selectedItem.effect;
