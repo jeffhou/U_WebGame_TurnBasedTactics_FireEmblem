@@ -496,6 +496,9 @@ function populateActionMenu () {
     if (grid.selectedUnit.canTrade()) {
         menu.addOption("Trade", function () {
             game.switchPhase("unit trading");
+            for (j = 0; j < CONSTANTS.hashedDirections.length; j++) {
+                attackMoveRange.push(CONSTANTS.hashedDirections[j] + hashCoor(grid.selectedUnit.coor()));
+            }
         });
     }
     menu.addOption("Wait", function () {
@@ -835,8 +838,8 @@ function processInputs () {
             } else if (game.phase == "unit trading") { //trading, currently can trade with yourself and trade multiple times in one turn
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
                     if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID == game.currentPlayer) { 
-
                         game.switchPhase("trade menu 1");
+                        attackMoveRange = [];
                         populateTradeMenu1(grid.selectedUnit);
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
                         game.switchPhase("action menu");
@@ -854,9 +857,9 @@ function processInputs () {
 }
 
 function drawActionMenu (listOfOptions) {
-    var xStart = 0;
+    var xStart = 0; var yStart = 20;
     if (cursor.coorOnScreen().x < 8) {
-        xStart = 360;
+        xStart = 340;
     } else {
         xStart = 20;
     }
@@ -864,14 +867,14 @@ function drawActionMenu (listOfOptions) {
     context.fillStyle = "#ffffff";
     for (i = 0; i < listOfOptions.length; i++) {
         if (i == 0) {
-            IMAGES.menu_top.drawOnScreen(xStart, 0);
+            IMAGES.menu_top.drawOnScreen(xStart, yStart);
         } else {
-            IMAGES.menu_mid.drawOnScreen(xStart, 20 + i * 38);
+            IMAGES.menu_mid.drawOnScreen(xStart, yStart + 20 + i * 38);
         }
-        context.fillText(listOfOptions[i], xStart + 31, 85 + i * 38);
+        context.fillText(listOfOptions[i], xStart + 31, yStart + 85 + i * 38);
     }
-    IMAGES.menu_bot.drawOnScreen(xStart, i * 38 + 20);
-    IMAGES.menu_cursor.drawOnScreen(xStart - 20, 25 + 38 * (menu.index));
+    IMAGES.menu_bot.drawOnScreen(xStart, yStart + i * 38 + 20);
+    IMAGES.menu_cursor.drawOnScreen(xStart - 20, yStart + 25 + 38 * (menu.index));
 }
 
 function drawInventoryPanel (inventory) {
