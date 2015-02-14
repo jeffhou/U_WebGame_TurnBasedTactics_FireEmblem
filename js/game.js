@@ -812,8 +812,10 @@ function processInputs () {
                             grid.grid[cursor.x][cursor.y].unit = null;
                         } else {
                             battleResult = grid.selectedUnit.damage(grid.unitAt(cursor.coor()).attack);
-                            units.splice(units.indexOf(grid.selectedUnit), 1);
-                            grid.grid[grid.selectedUnit.x][grid.selectedUnit.y].unit = null;
+                            if (battleResult == 0) {
+                                units.splice(units.indexOf(grid.selectedUnit), 1);
+                                grid.grid[grid.selectedUnit.x][grid.selectedUnit.y].unit = null;
+                            }
                         }
                         
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
