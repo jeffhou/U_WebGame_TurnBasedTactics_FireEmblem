@@ -661,9 +661,9 @@ units.push(new Unit("Cutthroat", 22, 5, 5, "images/axe_soldier.png", 1, 5, 1, 1,
 units.push(new Unit("Cutthroat", 21, 5, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0));
 units.push(new Unit("O'Neill", 24, 5, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0));
 //goblin's items
-units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
-units[3].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
-units[4].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
+units[2].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
+units[3].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
+units[4].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 
 function Grid () {
     this.grid = [];
