@@ -19,7 +19,6 @@ function SellableItem(name, price, imagePath, itemID, uses){
 }
 
 function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex){
-	Weapon.prototype = Object.create(SellableItem.prototype);
 	this.name = name;
 	this.price = price;
 	this.image = new ImageObject (imagePath);
@@ -76,7 +75,47 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
         	break;
     }
     this.itemType = "Weapon";
-}
+} Weapon.prototype.triangleBonus = function (defendingWeapon) {
+    switch (this.type) { //TODO: add weapon triangle and all that
+        case 0:
+            switch (defendingWeapon.type) {
+                case 0:
+                    return 0;
+                case 1:
+                    return -1;
+                case 2:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 1:
+        	switch (defendingWeapon.type) {
+                case 0:
+                    return 1;
+                case 1:
+                    return 0;
+                case 2:
+                    return -1;
+                default:
+                    return 0;
+            }
+        case 2:
+        	switch (defendingWeapon.type) {
+                case 0:
+                    return -1;
+                case 1:
+                    return 1;
+                case 2:
+                    return 0;
+                default:
+                    return 0;
+            }
+        default:
+            return 0;
+    }
+}; Weapon.prototype.effectiveBonus = function (targetUnit) {
+    return 1;
+};
 
 
 
@@ -322,6 +361,9 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 } Unit.prototype.coor = function () {
 	return new Coor(this.x, this.y);
 }; Unit.prototype.canAttack = function () {
+    if (this.equipped == null){
+        return false;
+    }
     for (var i = 0; i < CONSTANTS.hashedDirections.length; i++) {
         var hashedTile = CONSTANTS.hashedDirections[i] + hashCoor(this.coor());
         if (grid.unitAt(unhashCoor(hashedTile)) && grid.unitAt(unhashCoor(hashedTile)).playerID != this.playerID) {
@@ -359,7 +401,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 		if (this.inventory[i].uses > 0) {
 			temp.push(this.inventory[i]);
 		} else if (i == this.equipped) {
-			this.attack -= this.inventory[this.equipped].might;
+			this.attack -= this.inventory[this.equipped].might; //probably badly coded but will be deprecated soon anyway since we're revamping how stats figure into attacks
 			this.equipped = null;
 		}
 	}
@@ -378,6 +420,12 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 	}
 	this.equipped = index;
 	this.attack += this.inventory[this.equipped].might;
+}; Unit.prototype.weapon = function () {
+    if (this.equipped == null) {
+        return null;
+    } else {
+        return this.inventory[this.equipped];
+    }
 }; Unit.prototype.heal = function (amount) {
     if (this.currentHP >= this.maxHP) {
         return 0;
@@ -394,6 +442,20 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
         this.currentHP = 0;
         return 0;
     } else {
+        return 1;
+    }
+}; Unit.prototype.physicalAttack = function (targetUnit) {
+    return this.strength + ((this.weapon().might + this.weapon().triangleBonus(targetUnit.weapon())) * this.weapon().effectiveBonus(targetUnit));
+}; Unit.prototype.physicalDefense = function () {
+    return this.defense + grid.tileAt(this.coor()).defense;
+}; Unit.prototype.criticalBonus = function (targetUnit) {
+    var criticalRate = this.weapon().crit + this.skill / 2; // = Weapon Critical + (Skill / 2) + Support bonus + Class Critical bonus + S Rank bonus 
+    var criticalEvade = targetUnit.luck;
+    if (Math.random() * 100 <= criticalRate - criticalEvade) {
+        console.log("Critical Attack!");
+        return 3;
+    } else {
+        console.log("Normal Attack!");
         return 1;
     }
 };
@@ -654,7 +716,7 @@ units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 1
 
 units.push(new Unit("Eirika", 16, 3, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0));
 //Eirika's items
-units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)); //TODO: add rapier's special shit
+units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 10, 0, 'Prf', 2)); //TODO: add rapier's special shit
 units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
 units.push(new Unit("Cutthroat", 22, 5, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0));
@@ -808,31 +870,34 @@ function processInputs () {
                 }
             } else if (game.phase == "unit attacking") { //attacking
                 if (attackMoveRange.indexOf(hashCoor(cursor.coor())) != -1 || hashCoor(cursor.coor()) == hashCoor(grid.selectedUnit.coor())) { //clicked in range
-                    if (grid.unitAt(cursor.coor()) != null && grid.unitAt(cursor.coor()).playerID != game.currentPlayer) { //attacking the enemy unit
-                        var battleResult = grid.unitAt(cursor.coor()).damage(grid.selectedUnit.attack);
+                    var defender = grid.unitAt(cursor.coor());
+                    var attacker = grid.selectedUnit;
+                    if (defender != null && defender.playerID != game.currentPlayer) { //attacking the enemy unit
+                        
+                        var battleResult = defender.damage((attacker.physicalAttack(defender) - defender.physicalDefense()) * attacker.criticalBonus(defender));
+                        
                         //grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
-                        if (grid.selectedUnit.equipped != null) {
-                            grid.selectedUnit.inventory[grid.selectedUnit.equipped].uses -= 1;
-                            grid.selectedUnit.updateInventory();
-                        }
+                        
+                        attacker.inventory[attacker.equipped].uses -= 1;
+                        attacker.updateInventory();
                         
                         //TODO implement wex (weapon experience)
                         
                         if (battleResult == 0) {  // if enemy died
                             units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
-                            grid.grid[cursor.x][cursor.y].unit = null;
+                            grid.grid[defender.x][defender.y].unit = null;
                         } else {
-                            battleResult = grid.selectedUnit.damage(grid.unitAt(cursor.coor()).attack);
+                            battleResult = attacker.damage((defender.physicalAttack(attacker) - attacker.physicalDefense()) * defender.criticalBonus(attacker));
                             if (battleResult == 0) {
-                                units.splice(units.indexOf(grid.selectedUnit), 1);
-                                grid.grid[grid.selectedUnit.x][grid.selectedUnit.y].unit = null;
+                                units.splice(units.indexOf(attacker), 1);
+                                grid.grid[attacker.x][attacker.y].unit = null;
                             }
                         }
                         
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
                         //do nothing
                     }
-                    grid.selectedUnit.active = false;
+                    attacker.active = false;
                     var allInactive = true;
                     for (i = 0; i < units.length; i++) {
                         if (units[i].playerID == game.currentPlayer && units[i].active) {
