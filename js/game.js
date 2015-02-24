@@ -177,6 +177,8 @@ var IMAGES = new function () {
 	this.characterPane = new ImageObject("images/character_pane.png");
     this.terrainPane = new ImageObject("images/terrain_pane.png");
 	this.wrapperImage = new ImageObject("images/vba-window.png");
+    this.levelBackgrounds = [];
+    this.levelBackgrounds.push(new ImageObject("images/level0.png"));
 };
 
 /**
@@ -287,8 +289,7 @@ availableMoves = [];
 /**
  * Class for each controllable unit. Initializes at (0, 0), must be changed.
  */
-function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, movement, constitution, aid, traveler,affinity,condition,
-	level, experience, w, l, numBattles) {
+function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles) {
 	this.name = name;
 	this.inventory = [];
 	this.maxHP = maxHP;
@@ -307,7 +308,6 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 	this.luck = luck;
 	this.defense = defense;
 	this.resistance = resistance;
-	this.movement = movement;
 	this.constitution = constitution;
 	this.aid = aid;
 	this.traveler = traveler;
@@ -315,8 +315,8 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 	this.condition = condition;
     this.level = level;
     this.experience = experience;
-    this.w = w;
-    this.l = l;
+    this.numWins = numWins;
+    this.numLosses = numLosses;
     this.numBattles = numBattles
 
 } Unit.prototype.coor = function () {
@@ -461,7 +461,9 @@ function generateMovementRange (unit) {
 			for(k = 0; k < CONSTANTS.hashedDirections.length; k++){
 				var hashedTile = CONSTANTS.hashedDirections[k] + availableMoves[j];
 				if (availableMoves.indexOf(hashedTile) == -1) { // move not already in list
-					if (grid.tileAt(unhashCoor(hashedTile)).walkable == true) {
+                    if (unhashCoor(hashedTile).x < 0 || unhashCoor(hashedTile).y < 0 || unhashCoor(hashedTile).x > grid.width || unhashCoor(hashedTile).y > grid.height) {
+                        
+                    } else if (grid.tileAt(unhashCoor(hashedTile)).walkable == true) {
 						// line below says you can't move through other ppl's units
 						if (grid.tileAt(unhashCoor(hashedTile)).unit == null || grid.tileAt(unhashCoor(hashedTile)).unit.playerID == game.currentPlayer) {
 							availableMoves.push(hashedTile);
@@ -644,43 +646,52 @@ function populateTradeMenu2 (unit) { //TODO: Recode to actually be like the game
 //Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
 
 var units = [];
-units.push(new Unit("Seth", 15, 4, 5, "images/character.png", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+units.push(new Unit("Seth", 30, 4, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0));
 //Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
 units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 0, 'D', 1));
 units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Eirika", 10, 3, 4, "images/female_character_smiling.png", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+units.push(new Unit("Eirika", 16, 3, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0));
 //Eirika's items
 units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 0.10, 0, 'Prf', 2)); //TODO: add rapier's special shit
 units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Cutthroat", 14, 5, 4, "images/monster.png", 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+units.push(new Unit("Cutthroat", 22, 5, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0));
+units.push(new Unit("Cutthroat", 21, 5, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0));
+units.push(new Unit("O'Neill", 24, 5, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0));
 //goblin's items
 units[2].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
+units[3].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
+units[4].giveItem(new Weapon("Bronze Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 
 function Grid () {
-	this.grid = [];
+    this.grid = [];
 	this.width = 15;  this.height = 10;
 	this.xDisplace = 0;  this.yDisplace = 0;
 	this.selectedUnit = null;
-	for (i = 0; i < this.width; i++) {
-		this.grid.push([]);
-		for (j = 0; j < this.height; j++) {
-			if (i == 0 || j == 0 || i == this.width - 1 || j == this.height - 1) {
-				this.grid[i].push(new Tile(1));
-			} else if ((i * 2 + j * j) % 35 == 4) {
-                this.grid[i].push(new Tile(2));
-            } else if ((i * 2 + j * j) % 6 == 1) {
-                this.grid[i].push(new Tile(4));
-            } else {
-				this.grid[i].push(new Tile(0));
-			}
-		}
-	}
-	this.placeUnitAt(units[0], 1, 1);
-	this.placeUnitAt(units[1], 3, 1);
-	this.placeUnitAt(units[2], 7, 7);
+	data = [[0,0,4,1,0,2,2,2,1,1,1,1,1,1,1],
+        [2,3,2,2,2,2,1,1,1,1,1,1,1,1,1],
+        [2,3,2,0,1,1,1,1,1,1,1,1,1,1,1],
+        [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,0,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,0,0,0,0,0,0,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,0,4,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,0,4,0,0,4,0],
+        [1,1,1,1,1,1,1,1,1,1,0,0,0,0,4],
+        [1,1,1,1,1,1,1,1,1,1,1,0,0,0,0]];
+    this.grid = [];
+    for (i = 0; i < this.width; i++) {
+        this.grid.push([]);
+        for (j = 0; j < this.height; j++) {
+            this.grid[i].push(new Tile(data[j][i]));
+        }
+    }
+    this.placeUnitAt(units[0], 4, 4);
+    this.placeUnitAt(units[1], 4, 5);
+    this.placeUnitAt(units[2], 8, 6);
+	this.placeUnitAt(units[3], 9, 6);
+    this.placeUnitAt(units[4], 10, 8);
 } Grid.prototype.placeUnitAt = function (unit, x, y) {
 	if (this.grid[unit.x][unit.y].unit == unit) {
 		this.grid[unit.x][unit.y].unit = null;
@@ -943,11 +954,13 @@ function drawInventoryPanel (inventory) {
 
 function drawAll () {
 	IMAGES.wrapperImage.draw(0, 0);
-	
+	/*
 	grid.iterateScreen(function (coor) {
 		IMAGES.terrainMapObjects[grid.tileOnScreen(coor).type].drawOnGrid(coor.unscreenify());
 	});
-	
+	*/
+    IMAGES.levelBackgrounds[0].drawOnScreen(0, 0);
+    
 	grid.iterateScreen(function (coor) {  // highlights the available moves in blue after looping through every spot on the visible grid
 		if(availableMoves.indexOf(hashCoor(coor.unscreenify())) != -1) {
 			IMAGES.blueHighlight.drawOnGrid(coor);

@@ -1,0 +1,6 @@
+name, maxHP, attack, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles
+Seth,30,4,8," ""images/seth.png""",0,14,13,12,13,11,8,11,14, null," ""anima""", null,1,0,0,0,0
+Eirika,16,3,5," ""images/eirika.png""",0,4,8,9,5,3,1,5,4, null," ""light""", null,1,0,0,0,0
+Cutthroat,22,5,5," ""images/axe_soldier.png""",1,5,1,1,0,5,0,11,10, null, null, null,1,0,0,0,0
+Cutthroat,21,5,5," ""images/axe_soldier.png""",1,5,2,4,0,2,0,11,10, null, null, null,2,0,0,0,0
+O'Neill,24,5,5," ""images/axe_soldier.png""",1,6,4,8,0,2,0,11,10, null," ""fire""", null,1,0,0,0,0
