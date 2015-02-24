@@ -39,39 +39,30 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
 	switch (this.type) { //TODO: add weapon triangle and all that
         case 0:
             this.weaponType = "Sword";
-            
             break;
         case 1:
-        	this.weaponType = "Lance"
-
+        	this.weaponType = "Lance";
         	break;
         case 2:
-        	this.weaponType = "Axe"
-
+        	this.weaponType = "Axe";
         	break;
         case 3:
-        	this.weaponType = "Bow"
-
+        	this.weaponType = "Bow";
         	break;
         case 4:
-        	this.weaponType = "Dark Tome"
-
+        	this.weaponType = "Dark Tome";
         	break;
         case 5:
-        	this.weaponType = "Light Tome"
-
+        	this.weaponType = "Light Tome";
         	break;
         case 6:
-        	this.weaponType = "Anima Tome"
-
+        	this.weaponType = "Anima Tome";
         	break;
         case 7:
-        	this.weaponType = "Staff"
-
+        	this.weaponType = "Staff";
         	break;
         default:
-            this.weaponType = "Sword"
-
+            this.weaponType = "Sword";
         	break;
     }
     this.itemType = "Weapon";
