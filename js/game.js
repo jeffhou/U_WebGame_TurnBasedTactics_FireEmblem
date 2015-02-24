@@ -149,16 +149,6 @@ function ConsumableItem(name, price, imagePath, itemID, uses, type, effect, desc
     this.description = description;
 }
 
-
-
-
-
-
-
-
-
-/**===================================================================================*/
-
 /**
  * Adds Event Listeners for keyboard events (pressing down and pressing up) and
  * these listeners save the events into the dictionary keysDown for use later.
@@ -328,12 +318,11 @@ availableMoves = [];
 /**
  * Class for each controllable unit. Initializes at (0, 0), must be changed.
  */
-function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles) {
+function Unit (name, maxHP, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles) {
 	this.name = name;
 	this.inventory = [];
 	this.maxHP = maxHP;
 	this.currentHP = maxHP;
-	this.attack = attack;
 	this.move = move;
 	this.image = new ImageObject (imagePath);
 	this.active = true; // turns to false after it moves.
@@ -401,7 +390,7 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 		if (this.inventory[i].uses > 0) {
 			temp.push(this.inventory[i]);
 		} else if (i == this.equipped) {
-			this.attack -= this.inventory[this.equipped].might; //probably badly coded but will be deprecated soon anyway since we're revamping how stats figure into attacks
+			//this.attack -= this.inventory[this.equipped].might; //probably badly coded but will be deprecated soon anyway since we're revamping how stats figure into attacks
 			this.equipped = null;
 		}
 	}
@@ -415,11 +404,11 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
 		}
 	}
 }; Unit.prototype.equipItem = function (index) {
-	if (this.equipped != null) {
-		this.attack -= this.inventory[this.equipped].might;
-	}
+	//if (this.equipped != null) {
+		//this.attack -= this.inventory[this.equipped].might;
+	//}
 	this.equipped = index;
-	this.attack += this.inventory[this.equipped].might;
+	//this.attack += this.inventory[this.equipped].might;
 }; Unit.prototype.weapon = function () {
     if (this.equipped == null) {
         return null;
@@ -445,8 +434,10 @@ function Unit (name, maxHP, attack, move, imagePath, playerID, strength, skill, 
         return 1;
     }
 }; Unit.prototype.physicalAttack = function (targetUnit) {
+    console.log(this.strength + ((this.weapon().might + this.weapon().triangleBonus(targetUnit.weapon())) * this.weapon().effectiveBonus(targetUnit)));
     return this.strength + ((this.weapon().might + this.weapon().triangleBonus(targetUnit.weapon())) * this.weapon().effectiveBonus(targetUnit));
 }; Unit.prototype.physicalDefense = function () {
+    console.log(this.defense + grid.tileAt(this.coor()).defense);
     return this.defense + grid.tileAt(this.coor()).defense;
 }; Unit.prototype.criticalBonus = function (targetUnit) {
     var criticalRate = this.weapon().crit + this.skill / 2; // = Weapon Critical + (Skill / 2) + Support bonus + Class Critical bonus + S Rank bonus 
@@ -708,20 +699,20 @@ function populateTradeMenu2 (unit) { //TODO: Recode to actually be like the game
 //Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
 
 var units = [];
-units.push(new Unit("Seth", 30, 4, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0));
+units.push(new Unit("Seth", 30, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0));
 //Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
 units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 0, 'D', 1));
 units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Eirika", 16, 3, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0));
+units.push(new Unit("Eirika", 16, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0));
 //Eirika's items
 units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 10, 0, 'Prf', 2)); //TODO: add rapier's special shit
 units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Cutthroat", 22, 5, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0));
-units.push(new Unit("Cutthroat", 21, 5, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0));
-units.push(new Unit("O'Neill", 24, 5, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0));
+units.push(new Unit("Cutthroat", 22, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0));
+units.push(new Unit("Cutthroat", 21, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0));
+units.push(new Unit("O'Neill", 24, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0));
 //goblin's items
 units[2].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 units[3].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
