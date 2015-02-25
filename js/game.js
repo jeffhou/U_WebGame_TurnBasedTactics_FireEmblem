@@ -23,9 +23,7 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
 	this.price = price;
 	this.image = new ImageObject (imagePath);
 	this.itemID = itemID;
-
 	this.uses = uses;
-
 	this.range = range;
 	this.weight = weight;
 	this.might = might;
@@ -108,18 +106,14 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
     return 1;
 };
 
-
-
 function ConsumableItem(name, price, imagePath, itemID, uses, type, effect, description){
 	ConsumableItem.prototype = Object.create(SellableItem.prototype);
 	this.name = name;
 	this.price = price;
 	this.image = new ImageObject(imagePath);
 	this.itemID = itemID;
-	
 	this.usable = true;
 	this.uses = uses;
-
 	this.type = type;
 	this.effect = effect;
 	switch (this.type) {	//probably will have to change this later
@@ -169,12 +163,28 @@ function Game (numPlayers) {		//sets initial game parameters? woah?
  * Constants singleton, collection of a lot of magic numbers
  */
 var CONSTANTS = new function () {
-
 	this.hashedDirections = [-1000, -1, 1, 1000];
 	this.tileWidth = 32;			//game map specifications
 	this.mapWidth = 15;
 	this.mapHeight = 10;
 };
+
+function UnitClass (name, weaponUsage, specialClassifications, possiblePromotions, killExpBonus, classPower) {
+    this.name = name;
+    this.weaponUsage = weaponUsage;
+    this.specialClassifications = specialClassifications;
+    this.possiblePromotions = possiblePromotions;
+    if (specialClassifications.indexOf("promoted") != -1) {
+        this.damageExpBonus = 20;
+    } else {
+        this.damageExpBonus = 0;
+    }
+    this.killExpBonus = killExpBonus;
+    this.classPower = classPower;
+} var unitClasses = {};
+unitClasses["SwordLord"] = new UnitClass ("Lord", [0], [], ["SwordGreatLord"], 0, 3);
+unitClasses["Paladin"] = new UnitClass ("Paladin", [0, 1], ["mounted", "promoted"], [], 60, 3);
+unitClasses["Fighter"] = new UnitClass ("Fighter", [2], [], ["Warrior", "Hero"], 0, 3);
 
 var IMAGES = new function () {
 	this.menu_top = new ImageObject ("images/menu-top.png");
@@ -309,8 +319,9 @@ availableMoves = [];
 /**
  * Class for each controllable unit. Initializes at (0, 0), must be changed.
  */
-function Unit (name, maxHP, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles) {
+function Unit (name, unitClass, maxHP, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles, specialLabels) {
 	this.name = name;
+    this.unitClass = unitClass;
 	this.inventory = [];
 	this.maxHP = maxHP;
 	this.currentHP = maxHP;
@@ -690,20 +701,20 @@ function populateTradeMenu2 (unit) { //TODO: Recode to actually be like the game
 //Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
 
 var units = [];
-units.push(new Unit("Seth", 30, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0));
+units.push(new Unit("Seth", "Paladin", 30, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0, []));
 //Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
 units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 0, 'D', 1));
 units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Eirika", 16, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0));
+units.push(new Unit("Eirika", "SwordLord", 16, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0, ["boss"]));
 //Eirika's items
 units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 10, 0, 'Prf', 2)); //TODO: add rapier's special shit
 units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Cutthroat", 22, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0));
-units.push(new Unit("Cutthroat", 21, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0));
-units.push(new Unit("O'Neill", 24, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0));
+units.push(new Unit("Cutthroat", "Fighter", 22, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0, []));
+units.push(new Unit("Cutthroat", "Fighter", 21, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0, []));
+units.push(new Unit("O'Neill", "Fighter", 24, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0, ["boss"]));
 //goblin's items
 units[2].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 units[3].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
