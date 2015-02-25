@@ -319,7 +319,7 @@ availableMoves = [];
 /**
  * Class for each controllable unit. Initializes at (0, 0), must be changed.
  */
-function Unit (name, unitClass, maxHP, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles, specialLabels) {
+function Unit (name, unitClass, maxHP, move, imagePath, playerID, strength, skill, speed, luck, defense, resistance, constitution, aid, traveler, affinity, condition, level, experience, numWins, numLosses, numBattles, specialLabels, HPGrowth, SMGrowth, SklGrowth, SpdGrowth, LckGrowth, DefGrowth, ResGrowth) {
 	this.name = name;
     this.unitClass = unitClass;
 	this.inventory = [];
@@ -341,16 +341,55 @@ function Unit (name, unitClass, maxHP, move, imagePath, playerID, strength, skil
 	this.constitution = constitution;
 	this.aid = aid;
 	this.traveler = traveler;
-	this.affinity =affinity;
+	this.affinity = affinity;
 	this.condition = condition;
     this.level = level;
     this.experience = experience;
     this.numWins = numWins;
     this.numLosses = numLosses;
     this.numBattles = numBattles
-
+    this.HPGrowth = HPGrowth;
+    this.SMGrowth = SMGrowth;
+    this.SklGrowth = SklGrowth;
+    this.SpdGrowth = SpdGrowth;
+    this.LckGrowth = LckGrowth;
+    this.DefGrowth = DefGrowth;
+    this.ResGrowth = ResGrowth;
+    this.specialLabels = specialLabels;
 } Unit.prototype.coor = function () {
 	return new Coor(this.x, this.y);
+}; Unit.prototype.gainExp = function (experience) {
+    this.experience += experience;
+    while (this.experience >= 100) {
+        this.experience -= 100;
+        this.levelUp();
+    }
+}; Unit.prototype.gainExpFromDamage = function (defender, damage) {
+    var experience = 0;
+    if (damage == 0) {
+        experience = 1;
+    } else {
+        experience = Math.floor((31 + defender.level + unitClasses[defender.unitClass].damageExpBonus - this.level - unitClasses[this.unitClass].damageExpBonus) / unitClasses[this.unitClass].classPower);
+    }
+    this.gainExp(experience);
+}; Unit.prototype.gainExpFromKill = function (defender) {
+    //[(enemy's Level x enemy's Class power) + enemy's Class bonus B] - { [(Level x Class power) + Class bonus B] / Mode coefficient }
+    var experience = Math.floor(defender.level * unitClasses[defender.unitClass].classPower + unitClasses[defender.unitClass].killExpBonus - this.level * unitClasses[this.unitClass].classPower - unitClasses[this.unitClass].killExpBonus);
+    if (experience <= 0) {
+        experience = Math.floor(defender.level * unitClasses[defender.unitClass].classPower + unitClasses[defender.unitClass].killExpBonus + (-1 * this.level * unitClasses[this.unitClass].classPower - unitClasses[this.unitClass].killExpBonus) / 2) + 1;
+    }
+    experience += 20;
+    if (defender.specialLabels.indexOf("boss") != -1) {
+        experience += 40;
+    }
+    if (experience < 0) {
+        experience = 0;
+    }
+    
+    this.gainExp(experience);
+}; Unit.prototype.levelUp = function () {
+    this.level++;
+    
 }; Unit.prototype.canAttack = function () {
     if (this.equipped == null){
         return false;
@@ -436,10 +475,8 @@ function Unit (name, unitClass, maxHP, move, imagePath, playerID, strength, skil
         return 1;
     }
 }; Unit.prototype.physicalAttack = function (targetUnit) {
-    console.log(this.strength + ((this.weapon().might + this.weapon().triangleBonus(targetUnit.weapon())) * this.weapon().effectiveBonus(targetUnit)));
     return this.strength + ((this.weapon().might + this.weapon().triangleBonus(targetUnit.weapon())) * this.weapon().effectiveBonus(targetUnit));
 }; Unit.prototype.physicalDefense = function () {
-    console.log(this.defense + grid.tileAt(this.coor()).defense);
     return this.defense + grid.tileAt(this.coor()).defense;
 }; Unit.prototype.criticalBonus = function (targetUnit) {
     var criticalRate = this.weapon().crit + this.skill / 2; // = Weapon Critical + (Skill / 2) + Support bonus + Class Critical bonus + S Rank bonus 
@@ -701,20 +738,20 @@ function populateTradeMenu2 (unit) { //TODO: Recode to actually be like the game
 //Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit, crit, type, rank, wex)
 
 var units = [];
-units.push(new Unit("Seth", "Paladin", 30, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0, []));
+units.push(new Unit("Seth", "Paladin", 30, 8, "images/seth.png", 0, 14, 13, 12, 13, 11, 8, 11, 14, null, "anima", null, 1, 0, 0, 0, 0, [], 90, 50, 45, 45, 25, 40, 30));
 //Seth's items
 units[0].giveItem(new Weapon("Silver Lance", 1200, "placeholder", 0, 20, 1, 10, 14, 0.75, 0, 1, 'A', 1)); //give seth silver lance, eirika rapier vulneraries, goblin bronze axe
 units[0].giveItem(new Weapon("Steel Sword", 600, "placeholder", 0, 30, 1, 10, 8, 0.75, 0, 0, 'D', 1));
 units[0].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Eirika", "SwordLord", 16, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0, ["boss"]));
+units.push(new Unit("Eirika", "SwordLord", 16, 5, "images/eirika.png", 0, 4, 8, 9, 5, 3, 1, 5, 4, null, "light", null, 1, 0, 0, 0, 0, ["boss"], 70, 40, 60, 60, 60, 30, 30));
 //Eirika's items
 units[1].giveItem(new Weapon("Rapier", 0, "placeholder", 0, 40, 1, 5, 7, 0.95, 10, 0, 'Prf', 2)); //TODO: add rapier's special shit
 units[1].giveItem(new ConsumableItem("Vulnerary", 300, "placeholder", 1, 3, 0, 10, "Restores some HP."));
 
-units.push(new Unit("Cutthroat", "Fighter", 22, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0, []));
-units.push(new Unit("Cutthroat", "Fighter", 21, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0, []));
-units.push(new Unit("O'Neill", "Fighter", 24, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 1, 0, 0, 0, 0, ["boss"]));
+units.push(new Unit("Cutthroat", "Fighter", 22, 5, "images/axe_soldier.png", 1, 5, 1, 1, 0, 5, 0, 11, 10, null, null, null, 1, 0, 0, 0, 0, [], 20, 20, 20, 20, 20, 20, 20));
+units.push(new Unit("Cutthroat", "Fighter", 21, 5, "images/axe_soldier.png", 1, 5, 2, 4, 0, 2, 0, 11, 10, null, null, null, 2, 0, 0, 0, 0, [], 20, 20, 20, 20, 20, 20, 20));
+units.push(new Unit("O'Neill", "Fighter", 24, 5, "images/axe_soldier.png", 1, 6, 4, 8, 0, 2, 0, 11, 10, null, "fire", null, 4, 0, 0, 0, 0, ["boss"], 20, 20, 20, 20, 20, 20, 20));
 //goblin's items
 units[2].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
 units[3].giveItem(new Weapon("Iron Axe", 270, "placeholder", 0, 45, 1, 10, 8, 0.75, 0, 2, "E", 1));
@@ -725,16 +762,16 @@ function Grid () {
 	this.width = 15;  this.height = 10;
 	this.xDisplace = 0;  this.yDisplace = 0;
 	this.selectedUnit = null;
-	data = [[0,0,4,1,0,2,2,2,1,1,1,1,1,1,1],
-        [2,3,2,2,2,2,1,1,1,1,1,1,1,1,1],
-        [2,3,2,0,1,1,1,1,1,1,1,1,1,1,1],
-        [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1],
-        [1,1,0,0,0,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,0,0,0,0,0,0,1,1,1,1,0],
-        [1,1,1,1,1,1,1,1,0,4,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,0,4,0,0,4,0],
-        [1,1,1,1,1,1,1,1,1,1,0,0,0,0,4],
-        [1,1,1,1,1,1,1,1,1,1,1,0,0,0,0]];
+	data = [[0, 0, 4, 1, 0, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1],
+        [2, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [2, 3, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 4, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 4, 0, 0, 4, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 4],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]];
     this.grid = [];
     for (i = 0; i < this.width; i++) {
         this.grid.push([]);
@@ -866,8 +903,8 @@ function processInputs () {
                     var defender = grid.unitAt(cursor.coor());
                     var attacker = grid.selectedUnit;
                     if (defender != null && defender.playerID != game.currentPlayer) { //attacking the enemy unit
-                        
-                        var battleResult = defender.damage((attacker.physicalAttack(defender) - defender.physicalDefense()) * attacker.criticalBonus(defender));
+                        var damageByAttacker = (attacker.physicalAttack(defender) - defender.physicalDefense()) * attacker.criticalBonus(defender);
+                        var battleResult = defender.damage(damageByAttacker);
                         
                         //grid.unitAt(cursor.coor()).currentHP -= grid.selectedUnit.attack; // subtract hp from attacked unit
                         
@@ -875,15 +912,24 @@ function processInputs () {
                         attacker.updateInventory();
                         
                         //TODO implement wex (weapon experience)
-                        
                         if (battleResult == 0) {  // if enemy died
                             units.splice(units.indexOf(grid.unitAt(cursor.coor())), 1);
                             grid.grid[defender.x][defender.y].unit = null;
+                            //[31 + (enemy's Level + enemy's Class bonus A) - (Level + Class bonus A)] / Class power
+                            attacker.gainExpFromDamage(defender, damageByAttacker);
+                            attacker.gainExpFromKill(defender);
+                            
                         } else {
-                            battleResult = attacker.damage((defender.physicalAttack(attacker) - attacker.physicalDefense()) * defender.criticalBonus(attacker));
+                            var damageByDefender = (defender.physicalAttack(attacker) - attacker.physicalDefense()) * defender.criticalBonus(attacker);
+                            battleResult = attacker.damage(damageByDefender);
                             if (battleResult == 0) {
                                 units.splice(units.indexOf(attacker), 1);
                                 grid.grid[attacker.x][attacker.y].unit = null;
+                                defender.gainExpFromDamage(attacker, damageByDefender);
+                                defender.gainExpFromKill(attacker);
+                            } else {
+                                defender.gainExpFromDamage(attacker, damageByDefender);
+                                attacker.gainExpFromDamage(defender, damageByAttacker);
                             }
                         }
                         
