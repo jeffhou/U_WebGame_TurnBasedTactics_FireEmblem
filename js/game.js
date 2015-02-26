@@ -389,7 +389,28 @@ function Unit (name, unitClass, maxHP, move, imagePath, playerID, strength, skil
     this.gainExp(experience);
 }; Unit.prototype.levelUp = function () {
     this.level++;
-    
+    if (Math.random() * 100 < this.HPGrowth) {
+        this.maxHP++;
+        this.currentHP++;
+    }
+    if (Math.random() * 100 < this.SMGrowth) {
+        this.strength++;
+    }
+    if (Math.random() * 100 < this.SklGrowth) {
+        this.skill++;
+    }
+    if (Math.random() * 100 < this.SpdGrowth) {
+        this.speed++;
+    }
+    if (Math.random() * 100 < this.LckGrowth) {
+        this.luck++;
+    }
+    if (Math.random() * 100 < this.DefGrowth) {
+        this.defense++;
+    }
+    if (Math.random() * 100 < this.ResGrowth) {
+        this.resistance++;
+    }
 }; Unit.prototype.canAttack = function () {
     if (this.equipped == null){
         return false;
@@ -932,30 +953,30 @@ function processInputs () {
                                 attacker.gainExpFromDamage(defender, damageByAttacker);
                             }
                         }
-                        
+                        attacker.active = false;
+                        var allInactive = true;
+                        for (i = 0; i < units.length; i++) {
+                            if (units[i].playerID == game.currentPlayer && units[i].active) {
+                                allInactive = false;
+                                break;
+                            }
+                        }
+                        if (allInactive) {
+                            game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
+                            for (i = 0; i < units.length; i++) {
+                                if (units[i].playerID == game.currentPlayer) {
+                                    units[i].active = true;
+                                }
+                            }
+                        }
+                        grid.selectedUnit = null;
+                        game.switchPhase("neutral");
+                        availableMoves = [];
+                        attackMoveRange = [];
                     } else { //didn't attack anyone and just waited (by clicking on ally or ground)
                         //do nothing
                     }
-                    attacker.active = false;
-                    var allInactive = true;
-                    for (i = 0; i < units.length; i++) {
-                        if (units[i].playerID == game.currentPlayer && units[i].active) {
-                            allInactive = false;
-                            break;
-                        }
-                    }
-                    if (allInactive) {
-                        game.currentPlayer = (game.currentPlayer + 1) % game.numPlayers;
-                        for (i = 0; i < units.length; i++) {
-                            if (units[i].playerID == game.currentPlayer) {
-                                units[i].active = true;
-                            }
-                        }
-                    }
-                    grid.selectedUnit = null;
-                    game.switchPhase("neutral");
-                    availableMoves = [];
-                    attackMoveRange = [];
+                    
                 } else {
                     console.log("invalid click");
                 }
