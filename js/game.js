@@ -33,7 +33,6 @@ function Weapon(name, price, imagePath, itemID, uses, range, weight, might, hit,
 	this.wex = wex;
 	this.type = type;
 
-
 	switch (this.type) { //TODO: add weapon triangle and all that
         case 0:
             this.weaponType = "Sword";
@@ -156,6 +155,7 @@ function Game (numPlayers) {		//sets initial game parameters? woah?
 	this.phase = "neutral";  // defines which phase user is in
 } Game.prototype.switchPhase = function (newPhase) {
     this.phase = newPhase;
+    
     menu.reset();
 }; var game = new Game(2);
 
@@ -196,6 +196,7 @@ var IMAGES = new function () {
     this.inventory_bot = new ImageObject ("images/inventory_bottom.png");
     this.inventory_highlight = new ImageObject ("images/inventory_highlight.png");
     this.inventory_description = new ImageObject ("images/inventory_description.png");
+    this.stats_page = new ImageObject ("images/stats_page.png");
 	this.terrainMapObjects = {};
 	this.terrainMapObjects[0] = new ImageObject("images/Plain.png");
 	this.terrainMapObjects[1] = new ImageObject("images/Peak.png");
@@ -220,7 +221,6 @@ function Cursor() {
 	this.imageObject = new ImageObject ("images/cursor.png");
 	this.x = 0;
 	this.y = 0;
-	
 } Cursor.prototype.coor = function () {
 	return new Coor(this.x, this.y);
 }; Cursor.prototype.draw = function () {
@@ -243,6 +243,9 @@ function Cursor() {
     if(cursor.x != grid.width - 1) {
         cursor.x += 1;
     }
+}; Cursor.prototype.jumpTo = function (coor) {
+    this.x = coor.x;
+    this.y = coor.y;
 }; cursor = new Cursor();
 
 
@@ -636,6 +639,16 @@ function populateActionMenu () {
                     units[i].active = true;
                 }
             }
+            if (this.phase == "neutral") {
+                for (i = 0; i < units.length; i++) {
+                    if (units[i].playerID == game.currentPlayer) {
+                        break;
+                    }
+                }
+                if (i != units.length) {
+                    cursor.jumpTo(units[i].coor());
+                }
+            }
         }
         grid.selectedUnit = null;
         game.switchPhase("neutral");
@@ -876,7 +889,17 @@ function processInputs () {
         if (90 in keysDown) {
             menu.go();
         }
+    } else if (game.phase == "stats page") {  // in a menu
+        if (88 in keysDown) { // Player holding the "x" which is really "b" button
+            game.switchPhase("neutral");
+        }
     } else {  // not a menu
+        if(Object.keys(keysDown).length != 0) console.log(keysDown);
+        if (game.phase == "neutral" && 83 in keysDown) { //player pressed down "s" which is "R" for our emulator
+            if (grid.unitAt(cursor.coor()) != null) {
+                game.switchPhase("stats page");
+            }
+        }
         if (38 in keysDown) { // Player holding the up button
             cursor.up();
 			grid.adjust();
@@ -1108,7 +1131,31 @@ function drawAll () {
         drawInventoryPanel(grid.selectedUnit.inventory);
     } else if (game.phase.indexOf("menu") > -1) {
 		drawActionMenu(menu.options);
-	} else if (game.phase == "neutral") {	// shows stats during neutral phase?
+	} else if (game.phase == "stats page") {
+        IMAGES.stats_page.drawOnScreen(0, 0);
+        var unit = grid.unitAt(cursor.coor());
+        unit.image.drawOnScreenScaled(30, 30, 130, 130);
+        context.font = "bold 18px Verdana";
+        context.fillStyle = "#ffffff";
+        context.fillText(unit.name, 30, 275);
+        context.fillText(unit.level, 67, 305);
+        context.fillText(unit.experience, 110, 305);
+        context.fillText(unit.currentHP, 67, 335);
+        context.fillText(unit.maxHP, 110, 335);
+        context.fillStyle = "#ff0000";
+        context.fillText(unit.strength, 270, 115);
+        context.fillText(unit.skill, 270, 147);
+        context.fillText(unit.speed, 270, 179);
+        context.fillText(unit.luck, 270, 211);
+        context.fillText(unit.defense, 270, 243);
+        context.fillText(unit.resistance, 270, 275);
+        
+        context.fillText(unit.move, 400, 115);
+        context.fillText(unit.constitution, 400, 147);
+        context.fillText(unit.aid, 400, 179);
+        if (unit.affinity != null) context.fillText(unit.affinity, 400, 243);
+        
+    } else if (game.phase == "neutral") {	// shows stats during neutral phase?
         if (cursor.coorOnScreen().x < 8) {
             IMAGES.terrainPane.drawOnScreen(380, 220);
             context.font = "bold 17px Verdana";
@@ -1176,7 +1223,16 @@ function drawAll () {
 		}
 	}
 };
-
+if (game.phase == "neutral") {
+    for (i = 0; i < units.length; i++) {
+        if (units[i].playerID == game.currentPlayer) {
+            break;
+        }
+    }
+    if (i != units.length) {
+        cursor.jumpTo(units[i].coor());
+    }
+}
 var main = function () {
 	processInputs();
 	drawAll();
