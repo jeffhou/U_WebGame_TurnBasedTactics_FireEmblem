@@ -879,6 +879,9 @@ function Menu () {
 }; menu = new Menu();
 
 function processInputs () {
+    if (88 in keysDown) {  //pressed "B"
+        console.log("go back a menu");
+    }
     if (game.phase.indexOf("menu") > -1) {  // in a menu
         if (38 in keysDown) { // Player holding the up button
             menu.down();
