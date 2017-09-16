@@ -1,4 +1,4 @@
-#How to Play
+# How to Play
 Arrow Keys for Movement
 Buttons "z", "x", "a", "s" map to "A", "B", "L", "R" on a normal GameBoy Advance console.
 
