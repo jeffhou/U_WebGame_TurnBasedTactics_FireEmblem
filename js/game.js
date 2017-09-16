@@ -154,8 +154,8 @@ function Game (numPlayers) {		//sets initial game parameters? woah?
 	this.turnMode = 0;
 	this.phase = "neutral";  // defines which phase user is in
 } Game.prototype.switchPhase = function (newPhase) {
+    console.log(newPhase);
     this.phase = newPhase;
-    
     menu.reset();
 }; var game = new Game(2);
 
